@@ -1541,7 +1541,7 @@
       window.open(`https://api.whatsapp.com/send?phone=${whats}&text=${encodeURIComponent(texto)}`, '_blank');
     }
 
-    async function enviarPDFWhatsApp() {
+async function enviarPDFWhatsApp() {
       const nomeCliente = document.getElementById('orcNomeCliente').value || 'Cliente';
 
       try {
@@ -1550,23 +1550,36 @@
           type: 'application/pdf'
         });
 
+        // Tenta o envio direto via compartilhamento nativo do celular
         if (navigator.canShare && navigator.canShare({ files: [arquivo] }) && navigator.share) {
-          await navigator.share({
-            files: [arquivo],
-            title: 'Orçamento - ' + nomeCliente,
-            text: `Orçamento de ${nomeCliente}`
-          });
-          return;
-        } else {
-          // Se o navegador do celular ou PC não suportar o compartilhamento de arquivos direto, faz o download automático
-          await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
-          alert('O arquivo PDF foi baixado no seu dispositivo para você anexar e enviar no WhatsApp!');
+          try {
+            await navigator.share({
+              files: [arquivo],
+              title: 'Orçamento - ' + nomeCliente,
+              text: `Orçamento de ${nomeCliente}`
+            });
+            return;
+          } catch (shareErr) {
+            // Se o usuário cancelou, não faz nada
+            if (shareErr.name === 'AbortError') return;
+            console.warn('Compartilhamento direto negado/bloqueado pelo navegador, alternando para download...', shareErr);
+          }
         }
+
+        // Fallback robusto caso o navegador bloqueie o share de arquivos (Resolve o Permission Denied)
+        await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
+        
+        let whats = document.getElementById('orcWhatsCliente').value.replace(/\D/g, '');
+        if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
+        
+        const texto = `Olá *${nomeCliente}*! Segue o seu orçamento em PDF gerado por *${empresa.nome || 'nossa empresa'}*.\n\n(O PDF foi baixado no seu celular. Basta clicar no clipe 📎 do WhatsApp, ir em "Documentos" e selecionar o arquivo).`;
+        
+        window.open(`https://api.whatsapp.com/send?${whats ? 'phone=' + whats + '&' : ''}text=${encodeURIComponent(texto)}`, '_blank');
 
       } catch (error) {
         if (error && error.name === 'AbortError') return;
         console.error('Erro ao enviar PDF:', error);
-        alert('Não foi possível enviar o PDF. Detalhe: ' + (error.message || error));
+        alert('Não foi possível enviar o PDF diretamente. O arquivo foi baixado para o seu aparelho.');
       }
     }
   </script>
