@@ -205,6 +205,19 @@
           </div>
         </div>
 
+        <!-- CONTROLE DE STATUS PAGO / FECHADO -->
+        <div class="pt-2 flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
+          <div>
+            <p class="text-[11px] font-bold text-white">Status do Pagamento</p>
+            <p class="text-[9px] text-slate-400">Marque se o cliente já realizou o pagamento</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="checkPago" onchange="atualizarPreview()" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+            <span class="ml-2 text-xs font-bold text-emerald-400 peer-checked:inline-block hidden">PAGO</span>
+          </label>
+        </div>
+
         <div class="flex justify-between items-center pt-3 border-t border-slate-800 text-sm sm:text-base font-bold text-white">
           <span>Valor Total:</span>
           <span class="text-emerald-400 text-lg sm:text-xl font-black">R$ <span id="valorTotalExibicao">0,00</span></span>
@@ -251,7 +264,7 @@
                 <p id="pvEmpresaTel" class="text-slate-500 text-[10px]">Contato: --</p>
               </div>
               <div class="text-right">
-                <span class="bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full text-[9px] sm:text-[10px] tracking-wide">ORÇAMENTO</span>
+                <span id="pvBadgeStatus" class="bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full text-[9px] sm:text-[10px] tracking-wide">ORÇAMENTO</span>
               </div>
             </div>
 
@@ -283,12 +296,16 @@
 
             <!-- DADOS DO PIX E AVISO DE CONFERÊNCIA -->
             <div class="border-t border-slate-100 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-              <div>
+              <div id="pvBlocoPixContainer">
                 <p class="text-slate-400 text-[9px] font-bold uppercase tracking-wider">DADOS PARA PAGAMENTO (PIX):</p>
                 <p class="font-mono text-slate-800 font-bold text-xs">Chave: <span id="pvEmpresaPix">--</span></p>
                 <p class="text-slate-700 text-[10px]">Banco: <span id="pvEmpresaBanco" class="font-semibold">--</span></p>
                 <p class="text-slate-700 text-[10px]">Titular: <span id="pvEmpresaTitular" class="font-semibold">--</span></p>
                 <p class="text-[9px] text-amber-700 font-bold mt-1 bg-amber-50 p-1 rounded border border-amber-200">⚠️ ATENÇÃO: Confirme o nome do titular e banco antes de realizar o Pix!</p>
+              </div>
+              <div id="pvBlocoPagoConfirmado" class="hidden bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center">
+                <p class="text-emerald-800 text-[10px] font-black uppercase tracking-wider">✅ PAGAMENTO CONFIRMADO</p>
+                <p class="text-emerald-600 text-[9px] mt-0.5">Serviço quitado e garantido.</p>
               </div>
               <div class="text-right sm:text-right">
                 <p class="text-slate-400 text-[9px] font-bold uppercase tracking-wider">TOTAL GERAL</p>
@@ -344,9 +361,7 @@
       });
     });
 
-    // LÓGICA DE INSTALAÇÃO DO PWA (ATALHO TELA INICIAL)
     let eventoInstalacaoPWA = null;
-
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       eventoInstalacaoPWA = e;
@@ -356,7 +371,7 @@
 
     async function instalarPWA() {
       if (!eventoInstalacaoPWA) {
-        alert('O atalho já está instalado ou seu navegador gerencia isso automaticamente pelo menu (três pontinhos -> Adicionar à Tela Inicial).');
+        alert('O atalho já está instalado ou seu navegador gerencia isso automaticamente pelo menu.');
         return;
       }
       eventoInstalacaoPWA.prompt();
@@ -438,6 +453,7 @@
       if (itensValidos.length === 0) return alert('Adicione pelo menos um serviço com valor maior que R$ 0,00!');
 
       const g = window.garantiaCalculada || { inicio: '', fim: '', dias: 90 };
+      const pago = document.getElementById('checkPago').checked;
 
       orcamentoSalvoAtual = {
         id: Date.now(),
@@ -448,6 +464,7 @@
         garantiaInicio: g.inicio,
         garantiaFim: g.fim,
         obs: document.getElementById('orcObs').value,
+        pago: pago,
         itens: JSON.parse(JSON.stringify(itensValidos)),
         total: calcularTotal()
       };
@@ -456,7 +473,7 @@
       if (historicoOrcamentos.length > 30) historicoOrcamentos.pop();
       localStorage.setItem('db_historico', JSON.stringify(historicoOrcamentos));
 
-      alert('Orçamento salvo com sucesso no Histórico! Agora podes enviar ou baixar.');
+      alert('Orçamento salvo com sucesso no Histórico!');
     }
 
     async function executarAcao(tipoAcao) {
@@ -566,9 +583,7 @@
       });
     }
 
-    function fazerLogout() {
-      auth.signOut();
-    }
+    function fazerLogout() { auth.signOut(); }
 
     function liberarApp() {
       document.getElementById('telaLogin').classList.add('hidden');
@@ -852,7 +867,25 @@
 
       const g = window.garantiaCalculada || { inicio: '', fim: '', dias: 90 };
       const obs = document.getElementById('orcObs').value;
-      
+      const estaPago = document.getElementById('checkPago').checked;
+
+      // Altera o visual do documento entre Orçamento e Nota Paga
+      const badgeStatus = document.getElementById('pvBadgeStatus');
+      const blocoPixContainer = document.getElementById('pvBlocoPixContainer');
+      const blocoPagoConfirmado = document.getElementById('pvBlocoPagoConfirmado');
+
+      if (estaPago) {
+        badgeStatus.innerText = "RECIBO / QUITADO";
+        badgeStatus.className = "bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full text-[9px] sm:text-[10px] tracking-wide";
+        blocoPixContainer.classList.add('hidden');
+        blocoPagoConfirmado.classList.remove('hidden');
+      } else {
+        badgeStatus.innerText = "ORÇAMENTO";
+        badgeStatus.className = "bg-amber-100 text-amber-800 font-extrabold px-3 py-1 rounded-full text-[9px] sm:text-[10px] tracking-wide";
+        blocoPixContainer.classList.remove('hidden');
+        blocoPagoConfirmado.classList.add('hidden');
+      }
+
       const secaoExtra = document.getElementById('pvSecaoExtra');
       const boxGarantia = document.getElementById('pvGarantiaBox');
       const boxObs = document.getElementById('pvObsBox');
@@ -908,7 +941,7 @@
       lista.innerHTML = historicoOrcamentos.map(h => `
         <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 flex justify-between items-center gap-3">
           <div>
-            <p class="text-[10px] text-amber-400 font-bold">${h.data}</p>
+            <p class="text-[10px] text-amber-400 font-bold">${h.data} ${h.pago ? '• <span class="text-emerald-400 font-bold">PAGO</span>' : ''}</p>
             <p class="text-xs font-bold text-white">${h.cliente}</p>
             <p class="text-[10px] text-slate-400">Total: R$ ${h.total.toFixed(2)} (${h.itens.length} itens)</p>
           </div>
@@ -928,6 +961,7 @@
         document.getElementById('orcWhatsCliente').value = h.whats || '';
         document.getElementById('orcDiasGarantia').value = h.diasGarantia || 90;
         document.getElementById('orcObs').value = h.obs || '';
+        document.getElementById('checkPago').checked = h.pago || false;
         calcularDatasGarantia();
         itensOrcamento = JSON.parse(JSON.stringify(h.itens));
         orcamentoSalvoAtual = h;
@@ -978,10 +1012,11 @@
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
         const nomeCliente = (document.getElementById('orcNomeCliente').value || 'Cliente').trim().replace(/[\\/:*?"<>|]/g, '_');
+        const prefixoArquivo = document.getElementById('checkPago').checked ? 'Recibo' : 'Orcamento';
 
         const opcoes = {
           margin: 8,
-          filename: `Orcamento_${nomeCliente}.pdf`,
+          filename: `${prefixoArquivo}_${nomeCliente}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: {
             scale: 2,
@@ -1031,7 +1066,10 @@
       let whats = document.getElementById('orcWhatsCliente').value.replace(/\D/g, '');
       if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
 
-      let texto = `Olá *${document.getElementById('orcNomeCliente').value}*!\n\nSegue o orçamento enviado por *${empresa.nome || 'nossa empresa'}*:\n\n`;
+      const estaPago = document.getElementById('checkPago').checked;
+      const tituloMsg = estaPago ? 'COMPROVANTE DE PAGAMENTO / GARANTIA' : 'ORÇAMENTO';
+
+      let texto = `Olá *${document.getElementById('orcNomeCliente').value}*!\n\nSegue o *${tituloMsg}* enviado por *${empresa.nome || 'nossa empresa'}*:\n\n`;
       
       const itensValidos = itensOrcamento.filter(i => (parseFloat(i.valor) || 0) > 0);
       itensValidos.forEach(i => {
@@ -1039,13 +1077,17 @@
       });
       texto += `\n💰 *Total:* R$ ${calcularTotal().toFixed(2)}`;
       
+      if (estaPago) {
+        texto += `\n✅ *Status:* PAGAMENTO CONFIRMADO!`;
+      }
+
       const g = window.garantiaCalculada || { inicio: '', fim: '', dias: 90 };
       const obs = document.getElementById('orcObs').value;
       
       if (g.inicio && g.fim) texto += `\n🛡️ *Garantia (${g.dias} dias):* de ${formatarDataBR(g.inicio)} até ${formatarDataBR(g.fim)}`;
       if (obs) texto += `\n📝 *Obs:* ${obs}`;
       
-      if (empresa.pix) {
+      if (!estaPago && empresa.pix) {
         texto += `\n\n🔑 *DADOS PARA PAGAMENTO (PIX):*`;
         texto += `\n• Chave: ${empresa.pix}`;
         if (empresa.banco) texto += `\n• Banco: ${empresa.banco}`;
@@ -1053,7 +1095,7 @@
         texto += `\n⚠️ *ATENÇÃO:* Por favor, confira o banco e o nome do titular antes de realizar o pagamento!`;
       }
       
-      texto += `\n\n_Documento comercial de orçamento. Não é nota fiscal._`;
+      texto += `\n\n_Documento comercial. Não é nota fiscal._`;
 
       window.open(`https://api.whatsapp.com/send?phone=${whats}&text=${encodeURIComponent(texto)}`, '_blank');
     }
@@ -1070,8 +1112,8 @@
         if (podeCompartilharArquivo && navigator.share) {
           await navigator.share({
             files: [arquivo],
-            title: 'Orçamento Profissional',
-            text: `Olá ${nomeCliente}, segue o seu orçamento em PDF.`
+            title: 'Comprovante / Orçamento',
+            text: `Olá ${nomeCliente}, segue o seu documento em PDF.`
           });
         } else {
           await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
