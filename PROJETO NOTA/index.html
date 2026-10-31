@@ -18,7 +18,7 @@
       <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center justify-center gap-2">
         ZapOrça <span class="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Prático</span>
       </h1>
-      <p id="subtextoLogin" class="text-xs text-slate-400">Entre com sua Conta Google ou e-mail para acessar.</p>
+      <p id="subtextoLogin" class="text-xs text-slate-400">Entre com sua Conta Google para acessar o painel.</p>
     </div>
 
     <div id="blocoBotoesLogin" class="space-y-4 pt-2">
@@ -40,6 +40,10 @@
           Acessar / Criar Conta
         </button>
       </form>
+
+      <button onclick="entrarModoTesteLocal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl text-xs transition border border-amber-500/20">
+        ⚡ Testar Direto sem Login (Modo Local)
+      </button>
     </div>
   </div>
 
@@ -63,10 +67,43 @@
   <div id="modalHistorico" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2"><span>📜</span> Histórico de Orçamentos</h3>
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2"><span>📜</span> Histórico de Orçamentos</h3>
+          <p class="text-[10px] text-slate-500 mt-1">Consulte, continue ou remova orçamentos anteriores.</p>
+        </div>
         <button onclick="fecharModalHistorico()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
       </div>
+      <input id="buscaHistorico" type="search" oninput="renderizarHistorico(this.value)" placeholder="Buscar por cliente ou serviço..." class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+      <div id="resumoHistorico" class="text-[10px] text-slate-400"></div>
+      <p class="text-[10px] text-slate-500">Exportar ou enviar não salva automaticamente. Use “Salvar alterações” somente quando quiser guardar no histórico.</p>
       <div id="listaHistorico" class="overflow-y-auto space-y-3 pr-1 flex-1"></div>
+    </div>
+  </div>
+
+  <!-- MODAL FECHAR ORCAMENTO -->
+  <div id="modalFecharOrcamento" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[60] flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start gap-3 border-b border-slate-800 pb-3">
+        <div><p class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Finalização do serviço</p><h3 class="text-lg font-black text-white">Fechar orçamento</h3><p id="fecharOrcamentoCliente" class="text-xs text-slate-400 mt-1"></p></div>
+        <button onclick="fecharModalFecharOrcamento()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="block text-[10px] font-semibold text-slate-400 mb-1">Forma de pagamento</label><input id="arquivoFormaPagamento" value="Pix" placeholder="Ex.: Pix, dinheiro, cartão..." class="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"></div>
+        <div><label class="block text-[10px] font-semibold text-slate-400 mb-1">Data do pagamento</label><input id="arquivoDataPagamento" type="date" class="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"></div>
+      </div>
+      <div><label class="block text-[10px] font-semibold text-slate-400 mb-1">Comprovante (opcional)</label><input id="arquivoComprovante" type="file" accept="image/*,application/pdf" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-300 file:mr-2 file:rounded-lg file:border-0 file:bg-emerald-500 file:px-3 file:py-2 file:text-xs file:font-bold file:text-slate-950"><p class="text-[10px] text-slate-500 mt-1">Você pode anexar uma imagem ou PDF do comprovante, ou apenas registrar a forma e a data do pagamento.</p></div>
+      <div><label class="block text-[10px] font-semibold text-slate-400 mb-1">Observação do recebimento (opcional)</label><textarea id="arquivoObsPagamento" rows="2" placeholder="Ex.: Pago via Pix, chave final 1234..." class="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white resize-y"></textarea></div>
+      <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-[10px] text-emerald-200">Ao confirmar, este orçamento sai dos pendentes e vai para a galeria de arquivados como serviço concluído e pago.</div>
+      <div class="flex gap-2"><button onclick="fecharModalFecharOrcamento()" class="flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">Cancelar</button><button id="btnConfirmarArquivamento" onclick="confirmarFechamentoOrcamento()" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black">✓ Confirmar e arquivar</button></div>
+    </div>
+  </div>
+
+  <!-- GALERIA DE ORCAMENTOS ARQUIVADOS -->
+  <div id="modalArquivados" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[88vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3"><div><p class="text-[10px] uppercase tracking-widest font-bold text-emerald-400">Serviços concluídos</p><h3 class="text-base font-black text-white">📦 Orçamentos arquivados</h3><p class="text-[10px] text-slate-500 mt-1">Orçamentos fechados e pagamentos registrados.</p></div><button onclick="fecharModalArquivados()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button></div>
+      <input id="buscaArquivados" type="search" oninput="renderizarArquivados(this.value)" placeholder="Buscar por cliente, serviço ou pagamento..." class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500">
+      <div id="resumoArquivados" class="text-[10px] text-slate-400"></div><div id="listaArquivados" class="overflow-y-auto space-y-3 pr-1 flex-1"></div>
     </div>
   </div>
 
@@ -98,20 +135,21 @@
     <!-- COLUNA ESQUERDA: FORMULÁRIO -->
     <div class="lg:col-span-7 bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-800 p-4 sm:p-6 space-y-6">
       
-      <!-- HEADER COM BOAS-VINDAS E IDENTIFICAÇÃO DO USUÁRIO -->
+      <!-- HEADER -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-4 gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-xl flex items-center justify-center text-slate-950 font-black text-lg shadow-md shadow-amber-500/20">⚡</div>
-          <div>
-            <h1 class="text-sm sm:text-base font-black tracking-tight text-white" id="infoUsuarioLogado">Olá, --, bem-vindo</h1>
-            <p class="text-[10px] text-slate-400">ZapOrça Prático • Painel do Prestador</p>
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-xl flex items-center justify-center text-slate-950 font-black text-lg shadow-md shadow-amber-500/20 shrink-0">⚡</div>
+          <div class="min-w-0">
+            <h1 class="text-xs sm:text-sm font-black tracking-tight text-white truncate" id="infoUsuarioLogado">Painel do Prestador</h1>
+            <p class="text-[10px] text-slate-400">ZapOrça Prático • Sistema de Gestão</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-1.5 flex-wrap">
           <span id="badgePlano" class="text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">Grátis</span>
           <button onclick="abrirModalHistorico()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-2.5 py-1.5 rounded-xl transition border border-slate-700">
             📜 Histórico
           </button>
+          <button onclick="abrirModalArquivados()" class="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-bold px-2.5 py-1.5 rounded-xl transition border border-emerald-500/20">📦 Arquivados</button>
           <button onclick="fazerLogout()" class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 font-bold px-2.5 py-1.5 rounded-xl hover:bg-red-500/20 transition">
             Sair
           </button>
@@ -205,36 +243,23 @@
           </div>
         </div>
 
-        <!-- CONTROLE DE STATUS PAGO / FECHADO -->
-        <div class="pt-2 flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
-          <div>
-            <p class="text-[11px] font-bold text-white">Status do Pagamento</p>
-            <p class="text-[9px] text-slate-400">Marque para emitir recibo e confirmar pagamento</p>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="checkPago" onchange="atualizarPreview()" class="sr-only peer">
-            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-            <span class="ml-2 text-xs font-bold text-emerald-400 peer-checked:inline-block hidden">PAGO</span>
-          </label>
-        </div>
-
         <div class="flex justify-between items-center pt-3 border-t border-slate-800 text-sm sm:text-base font-bold text-white">
           <span>Valor Total:</span>
           <span class="text-emerald-400 text-lg sm:text-xl font-black">R$ <span id="valorTotalExibicao">0,00</span></span>
         </div>
       </div>
 
-      <!-- BOTÕES DE AÇÃO DO FORMULÁRIO (SALVAR E FECHAR/LIMPAR) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-        <button onclick="salvarOrcamentoManual()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-3.5 px-4 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2">
-          💾 Salvar Orçamento
+      <!-- BOTÃO SALVAR ORÇAMENTO -->
+      <div class="pt-1 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+        <button onclick="salvarOrcamentoManual()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-3.5 px-4 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+          💾 Salvar alterações
         </button>
-        <button onclick="fecharOuLimparNota()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 px-4 rounded-2xl text-xs sm:text-sm transition border border-slate-700 flex items-center justify-center gap-2 cursor-pointer">
-          🗑️ Fechar / Limpar Nota
+        <button onclick="novoOrcamento()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold py-3.5 px-4 rounded-2xl text-xs transition active:scale-95 cursor-pointer">
+          ＋ Novo orçamento
         </button>
       </div>
 
-      <!-- BLOCO 4: AÇÕES DE ENVIO -->
+      <!-- BLOCO 4: AÇÕES -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
         <button onclick="executarAcao('texto')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-3 rounded-2xl text-xs transition shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
           💬 Enviar Texto
@@ -267,7 +292,7 @@
                 <p id="pvEmpresaTel" class="text-slate-500 text-[10px]">Contato: --</p>
               </div>
               <div class="text-right">
-                <span id="pvBadgeStatus" class="bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full text-[9px] sm:text-[10px] tracking-wide">ORÇAMENTO</span>
+                <span class="bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full text-[9px] sm:text-[10px] tracking-wide">ORÇAMENTO</span>
               </div>
             </div>
 
@@ -299,16 +324,12 @@
 
             <!-- DADOS DO PIX E AVISO DE CONFERÊNCIA -->
             <div class="border-t border-slate-100 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-              <div id="pvBlocoPixContainer">
+              <div>
                 <p class="text-slate-400 text-[9px] font-bold uppercase tracking-wider">DADOS PARA PAGAMENTO (PIX):</p>
                 <p class="font-mono text-slate-800 font-bold text-xs">Chave: <span id="pvEmpresaPix">--</span></p>
                 <p class="text-slate-700 text-[10px]">Banco: <span id="pvEmpresaBanco" class="font-semibold">--</span></p>
                 <p class="text-slate-700 text-[10px]">Titular: <span id="pvEmpresaTitular" class="font-semibold">--</span></p>
                 <p class="text-[9px] text-amber-700 font-bold mt-1 bg-amber-50 p-1 rounded border border-amber-200">⚠️ ATENÇÃO: Confirme o nome do titular e banco antes de realizar o Pix!</p>
-              </div>
-              <div id="pvBlocoPagoConfirmado" class="hidden bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center">
-                <p class="text-emerald-800 text-[10px] font-black uppercase tracking-wider">✅ PAGAMENTO CONFIRMADO</p>
-                <p class="text-emerald-600 text-[9px] mt-0.5">Serviço quitado e garantido.</p>
               </div>
               <div class="text-right sm:text-right">
                 <p class="text-slate-400 text-[9px] font-bold uppercase tracking-wider">TOTAL GERAL</p>
@@ -353,6 +374,11 @@
     let dadosUsuarioDB = { status: 'gratis', bonusIniciais: 5, ultimoUsoData: '', usosHoje: 0 };
 
     document.addEventListener('DOMContentLoaded', () => {
+      if (window.location.protocol === 'file:') {
+        entrarModoTesteLocal();
+        return;
+      }
+
       auth.onAuthStateChanged(async (user) => {
         if (user) {
           usuarioAtual = user;
@@ -390,7 +416,15 @@
       if (btn) btn.classList.add('hidden');
     });
 
+    function entrarModoTesteLocal() {
+      usuarioAtual = { email: 'teste.local@zaporca.com', uid: 'local_123' };
+      dadosUsuarioDB = { status: 'pro', bonusIniciais: 99, ultimoUsoData: '', usosHoje: 0 };
+      document.getElementById('infoUsuarioLogado').innerText = 'Modo de Teste Local (Offline)';
+      liberarApp();
+    }
+
     async function carregarDadosUsuario(user) {
+      if (window.location.protocol === 'file:') return;
       const refDoc = db.collection('usuarios').doc(user.uid);
       const doc = await refDoc.get();
       const hojeDataStr = new Date().toISOString().split('T')[0];
@@ -414,7 +448,7 @@
       const elTexto = document.getElementById('textoUsosRestantes');
       const elInfoUsuario = document.getElementById('infoUsuarioLogado');
 
-      if (usuarioAtual && usuarioAtual.email) {
+      if (usuarioAtual && usuarioAtual.email && window.location.protocol !== 'file:') {
         elInfoUsuario.innerText = `Olá, ${usuarioAtual.email}, bem-vindo`;
       }
 
@@ -425,10 +459,10 @@
       } else {
         elBadge.innerText = "GRÁTIS";
         if (dadosUsuarioDB.bonusIniciais > 0) {
-          elTexto.innerText = `🎁 Você tem ${dadosUsuarioDB.bonusIniciais} orçamentos bônus disponíveis.`;
+          elTexto.innerText = `🎁 Você tem ${dadosUsuarioDB.bonusIniciais} orçamentos bônus.`;
         } else {
           const restantesHoje = Math.max(0, 1 - dadosUsuarioDB.usosHoje);
-          elTexto.innerText = `⏳ Cota diária: ${restantesHoje} de 1 orçamento disponível hoje.`;
+          elTexto.innerText = `⏳ Cota diária: ${restantesHoje} de 1 disponível hoje.`;
         }
       }
     }
@@ -438,6 +472,7 @@
     function calcularDatasGarantia() {
       const dias = parseInt(document.getElementById('orcDiasGarantia').value) || 0;
       const hoje = new Date();
+      
       const inicioStr = hoje.toISOString().split('T')[0];
       
       const dataFim = new Date();
@@ -448,55 +483,90 @@
       atualizarPreview();
     }
 
-    function salvarOrcamentoManual() {
-      const nomeCliente = document.getElementById('orcNomeCliente').value;
-      if (!nomeCliente) return alert('Por favor, preencha o nome do cliente antes de salvar!');
+    function novoOrcamento() {
+      const temDados = document.getElementById('orcNomeCliente').value.trim() || itensOrcamento.some(i => i.descricao || Number(i.valor) > 0);
+      if (temDados && !confirm('Começar um novo orçamento? As informações atuais não salvas serão descartadas.')) return;
+      orcamentoSalvoAtual = null;
+      document.getElementById('orcNomeCliente').value = '';
+      document.getElementById('orcWhatsCliente').value = '';
+      document.getElementById('orcObs').value = '';
+      document.getElementById('orcDiasGarantia').value = '90';
+      itensOrcamento = [{ descricao: '', qtd: 1, valor: 0 }];
+      calcularDatasGarantia();
+      renderizarItens();
+      atualizarPreview();
+    }
 
-      const itensValidos = itensOrcamento.filter(i => (parseFloat(i.valor) || 0) > 0);
-      if (itensValidos.length === 0) return alert('Adicione pelo menos um serviço com valor maior que R$ 0,00!');
+    function salvarOrcamentoManual(silencioso = false) {
+      const nomeCliente = document.getElementById('orcNomeCliente').value.trim();
+      if (!nomeCliente) {
+        if (!silencioso) alert('Informe o nome do cliente antes de salvar.');
+        return false;
+      }
+
+      const itensValidos = itensOrcamento.filter(i => (parseFloat(i.valor) || 0) > 0 && (parseFloat(i.qtd) || 0) > 0);
+      if (itensValidos.length === 0) {
+        if (!silencioso) alert('Adicione pelo menos um serviço com quantidade e valor maiores que zero.');
+        return false;
+      }
 
       const g = window.garantiaCalculada || { inicio: '', fim: '', dias: 90 };
-      const pago = document.getElementById('checkPago').checked;
-
-      orcamentoSalvoAtual = {
-        id: Date.now(),
-        data: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      const dados = {
         cliente: nomeCliente,
         whats: document.getElementById('orcWhatsCliente').value,
         diasGarantia: g.dias,
         garantiaInicio: g.inicio,
         garantiaFim: g.fim,
         obs: document.getElementById('orcObs').value,
-        pago: pago,
         itens: JSON.parse(JSON.stringify(itensValidos)),
         total: calcularTotal()
       };
 
-      historicoOrcamentos.unshift(orcamentoSalvoAtual);
-      if (historicoOrcamentos.length > 30) historicoOrcamentos.pop();
-      localStorage.setItem('db_historico', JSON.stringify(historicoOrcamentos));
+      const idAtual = orcamentoSalvoAtual && orcamentoSalvoAtual.id;
+      let indice = idAtual
+        ? historicoOrcamentos.findIndex(item => String(item.id) === String(idAtual))
+        : -1;
 
-      alert('Orçamento salvo com sucesso no Histórico!');
+      if (indice < 0) {
+        const assinatura = assinaturaOrcamento(dados);
+        indice = historicoOrcamentos.findIndex(item => assinaturaOrcamento(item) === assinatura);
+      }
+
+      const registroAnterior = indice >= 0 ? historicoOrcamentos[indice] : null;
+      const registro = {
+        ...dados,
+        id: (registroAnterior && registroAnterior.id) || idAtual || Date.now(),
+        data: (registroAnterior && registroAnterior.data) || (new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})),
+        atualizadoEm: new Date().toISOString()
+      };
+
+      if (indice >= 0) historicoOrcamentos.splice(indice, 1);
+      historicoOrcamentos.unshift(registro);
+      historicoOrcamentos = removerDuplicadosExatosHistorico(historicoOrcamentos);
+      if (historicoOrcamentos.length > 100) historicoOrcamentos = historicoOrcamentos.slice(0, 100);
+
+      orcamentoSalvoAtual = registro;
+      localStorage.setItem('db_historico', JSON.stringify(historicoOrcamentos));
+      if (!silencioso) alert(registroAnterior ? 'Orçamento atualizado no histórico!' : 'Orçamento salvo no histórico!');
+      return true;
     }
 
-    function fecharOuLimparNota() {
-      if (confirm('Deseja limpar os dados para iniciar um novo atendimento/nota?')) {
-        document.getElementById('orcNomeCliente').value = '';
-        document.getElementById('orcWhatsCliente').value = '';
-        document.getElementById('orcObs').value = '';
-        document.getElementById('checkPago').checked = false;
-        itensOrcamento = [];
-        adicionarLinhaVazia();
-        orcamentoSalvoAtual = null;
-        atualizarPreview();
+    function validarOrcamentoParaAcao() {
+      const nomeCliente = document.getElementById('orcNomeCliente').value.trim();
+      if (!nomeCliente) {
+        alert('Informe o nome do cliente antes de exportar ou enviar.');
+        return false;
       }
+      const itensValidos = itensOrcamento.filter(i => (parseFloat(i.valor) || 0) > 0 && (parseFloat(i.qtd) || 0) > 0);
+      if (itensValidos.length === 0) {
+        alert('Adicione pelo menos um serviço com quantidade e valor maiores que zero.');
+        return false;
+      }
+      return true;
     }
 
     async function executarAcao(tipoAcao) {
-      if (!orcamentoSalvoAtual) {
-        alert('Atenção: Primeiro deves clicar em "💾 Salvar Orçamento" antes de enviar ou exportar!');
-        return;
-      }
+      if (!validarOrcamentoParaAcao()) return;
 
       if (dadosUsuarioDB.status !== 'pro') {
         if (dadosUsuarioDB.bonusIniciais > 0) {
@@ -508,7 +578,7 @@
           return;
         }
 
-        if (usuarioAtual) {
+        if (usuarioAtual && window.location.protocol !== 'file:') {
           await db.collection('usuarios').doc(usuarioAtual.uid).update({
             bonusIniciais: dadosUsuarioDB.bonusIniciais,
             usosHoje: dadosUsuarioDB.usosHoje
@@ -534,6 +604,25 @@
           Gerando Pix...
         </div>
       `;
+
+      if (window.location.protocol === 'file:') {
+        setTimeout(() => {
+          containerPix.innerHTML = `
+            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">MODO TESTE LOCAL (Simulado)</p>
+            <p class="text-2xl font-black text-emerald-400">R$ 35,00</p>
+            <div class="bg-white p-3 rounded-xl w-36 h-36 mx-auto flex items-center justify-center border border-slate-200">
+              <span class="text-[10px] text-slate-900 font-bold text-center">QR CODE DE TESTE</span>
+            </div>
+            <div class="space-y-2">
+              <input type="text" id="inputCopiaCola" readonly value="00020126580014br.gov.bcb.pix...TESTE" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl text-[10px] text-slate-300 text-center">
+              <button onclick="copiarPixCopiaCola()" class="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold py-2 rounded-xl text-xs transition">
+                📋 Copiar Código Pix Teste
+              </button>
+            </div>
+          `;
+        }, 600);
+        return;
+      }
 
       try {
         const emailUser = usuarioAtual ? usuarioAtual.email : 'cliente@zaporca.com';
@@ -562,7 +651,7 @@
         }
       } catch (err) {
         console.error(err);
-        containerPix.innerHTML = `<p class="text-xs text-red-400 p-4">Erro de conexão com o servidor Pix.</p>`;
+        containerPix.innerHTML = `<p class="text-xs text-red-400 p-4">Modo de teste offline.</p>`;
       }
     }
 
@@ -580,6 +669,7 @@
     }
 
     function fazerLoginGoogle() {
+      if (window.location.protocol === 'file:') { entrarModoTesteLocal(); return; }
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => auth.signInWithPopup(provider))
@@ -588,6 +678,7 @@
 
     function fazerLoginEmail(e) {
       e.preventDefault();
+      if (window.location.protocol === 'file:') { entrarModoTesteLocal(); return; }
       const email = document.getElementById('loginEmail').value;
       const senha = document.getElementById('loginSenha').value;
       auth.signInWithEmailAndPassword(email, senha).catch((err) => {
@@ -599,7 +690,10 @@
       });
     }
 
-    function fazerLogout() { auth.signOut(); }
+    function fazerLogout() {
+      if (window.location.protocol === 'file:') { bloquearApp(); return; }
+      auth.signOut();
+    }
 
     function liberarApp() {
       document.getElementById('telaLogin').classList.add('hidden');
@@ -617,8 +711,43 @@
     let clientesSalvos = JSON.parse(localStorage.getItem('db_clientes')) || [];
     let servicosSalvos = JSON.parse(localStorage.getItem('db_servicos')) || [];
     let historicoOrcamentos = JSON.parse(localStorage.getItem('db_historico')) || [];
+    let orcamentosArquivados = JSON.parse(localStorage.getItem('db_orcamentos_arquivados')) || [];
+    let idOrcamentoEmFechamento = null;
     let empresa = JSON.parse(localStorage.getItem('db_empresa')) || { nome: '', cnpj: '', tel: '', pix: '', banco: '', titular: '', logo: '' };
     let itensOrcamento = [];
+
+    function assinaturaOrcamento(registro) {
+      const normalizar = valor => String(valor || '').trim().toLocaleLowerCase('pt-BR');
+      const itens = (registro.itens || []).map(i => ({
+        descricao: normalizar(i.descricao),
+        qtd: Number(i.qtd) || 0,
+        valor: Number(i.valor) || 0
+      })).sort((a, b) => a.descricao.localeCompare(b.descricao) || a.qtd - b.qtd || a.valor - b.valor);
+      return JSON.stringify({
+        cliente: normalizar(registro.cliente),
+        whats: String(registro.whats || '').replace(/\D/g, ''),
+        obs: normalizar(registro.obs),
+        diasGarantia: Number(registro.diasGarantia) || 0,
+        itens
+      });
+    }
+
+    function removerDuplicadosExatosHistorico(lista) {
+      const ids = new Set();
+      const assinaturas = new Set();
+      return (Array.isArray(lista) ? lista : []).filter(registro => {
+        if (!registro || typeof registro !== 'object') return false;
+        const id = registro.id == null ? '' : String(registro.id);
+        const assinatura = assinaturaOrcamento(registro);
+        if ((id && ids.has(id)) || assinaturas.has(assinatura)) return false;
+        if (id) ids.add(id);
+        assinaturas.add(assinatura);
+        return true;
+      });
+    }
+
+    historicoOrcamentos = removerDuplicadosExatosHistorico(historicoOrcamentos);
+    localStorage.setItem('db_historico', JSON.stringify(historicoOrcamentos));
 
     function inicializarApp() {
       carregarEmpresaInputs();
@@ -630,7 +759,7 @@
         document.getElementById(id).addEventListener('input', salvarEmpresaLocal);
       });
       ['orcNomeCliente', 'orcWhatsCliente'].forEach(id => {
-        document.getElementById(id).addEventListener('input', () => { orcamentoSalvoAtual = null; atualizarPreview(); });
+        document.getElementById(id).addEventListener('input', () => { atualizarPreview(); });
       });
 
       atualizarPreview();
@@ -696,7 +825,6 @@
       if (cliente) {
         document.getElementById('orcNomeCliente').value = cliente.nome;
         document.getElementById('orcWhatsCliente').value = cliente.whats || '';
-        orcamentoSalvoAtual = null;
         atualizarPreview();
       }
     }
@@ -717,7 +845,7 @@
             <p class="text-xs font-bold text-white">${c.nome}</p>
             <p class="text-[10px] text-slate-400">Whats: ${c.whats || 'Não informado'}</p>
           </div>
-          <button onclick="excluirClienteSalvo(${c.id})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold px-3 py-1.5 rounded-xl transition">Excluir</button>
+          <button onclick="excluirClienteSalvo(${c.id})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold px-3 py-1.5 rounded-xl transition" title="Excluir cliente" aria-label="Excluir cliente">🗑 Excluir</button>
         </div>
       `).join('');
     }
@@ -732,7 +860,6 @@
 
     function adicionarLinhaVazia() {
       itensOrcamento.push({ descricao: '', qtd: 1, valor: 0 });
-      orcamentoSalvoAtual = null;
       renderizarItens();
     }
 
@@ -755,7 +882,6 @@
       const servico = servicosSalvos.find(s => s.id == id);
       if (servico) {
         itensOrcamento.push({ descricao: servico.nome, qtd: 1, valor: servico.valor });
-        orcamentoSalvoAtual = null;
         renderizarItens();
         document.getElementById('selectServicoSalvo').value = "";
       }
@@ -779,7 +905,7 @@
           </div>
           <div class="flex justify-end gap-2">
             <button onclick="atualizarServicoSalvo(${s.id})" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-1.5 rounded-xl transition">Atualizar</button>
-            <button onclick="excluirServicoSalvo(${s.id})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold px-3 py-1.5 rounded-xl transition">Excluir</button>
+            <button onclick="excluirServicoSalvo(${s.id})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold px-3 py-1.5 rounded-xl transition" title="Excluir serviço" aria-label="Excluir serviço">🗑 Excluir</button>
           </div>
         </div>
       `).join('');
@@ -826,20 +952,17 @@
           </div>
         </div>
       `).join('');
-      orcamentoSalvoAtual = null;
       atualizarPreview();
     }
 
     function atualizarItem(idx, campo, valor) {
       itensOrcamento[idx][campo] = campo === 'descricao' ? valor : parseFloat(valor) || 0;
-      orcamentoSalvoAtual = null;
       atualizarPreview();
     }
 
     function removerItem(idx) {
       itensOrcamento.splice(idx, 1);
       if (itensOrcamento.length === 0) adicionarLinhaVazia();
-      orcamentoSalvoAtual = null;
       renderizarItens();
     }
 
@@ -883,24 +1006,7 @@
 
       const g = window.garantiaCalculada || { inicio: '', fim: '', dias: 90 };
       const obs = document.getElementById('orcObs').value;
-      const estaPago = document.getElementById('checkPago').checked;
-
-      const badgeStatus = document.getElementById('pvBadgeStatus');
-      const blocoPixContainer = document.getElementById('pvBlocoPixContainer');
-      const blocoPagoConfirmado = document.getElementById('pvBlocoPagoConfirmado');
-
-      if (estaPago) {
-        badgeStatus.innerText = "RECIBO / QUITADO";
-        badgeStatus.className = "bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full text-[9px] sm:text-[10px] tracking-wide";
-        blocoPixContainer.classList.add('hidden');
-        blocoPagoConfirmado.classList.remove('hidden');
-      } else {
-        badgeStatus.innerText = "ORÇAMENTO";
-        badgeStatus.className = "bg-amber-100 text-amber-800 font-extrabold px-3 py-1 rounded-full text-[9px] sm:text-[10px] tracking-wide";
-        blocoPixContainer.classList.remove('hidden');
-        blocoPagoConfirmado.classList.add('hidden');
-      }
-
+      
       const secaoExtra = document.getElementById('pvSecaoExtra');
       const boxGarantia = document.getElementById('pvGarantiaBox');
       const boxObs = document.getElementById('pvObsBox');
@@ -944,82 +1050,229 @@
     }
 
     function abrirModalHistorico() {
-      const modal = document.getElementById('modalHistorico');
-      const lista = document.getElementById('listaHistorico');
-      modal.classList.remove('hidden');
+      document.getElementById('modalHistorico').classList.remove('hidden');
+      const busca = document.getElementById('buscaHistorico');
+      busca.value = '';
+      renderizarHistorico('');
+      setTimeout(() => busca.focus(), 50);
+    }
 
-      if (historicoOrcamentos.length === 0) {
-        lista.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhum orçamento no histórico.</p>`;
+    function renderizarHistorico(termo = '') {
+      const lista = document.getElementById('listaHistorico');
+      const resumo = document.getElementById('resumoHistorico');
+      const busca = String(termo || '').trim().toLocaleLowerCase('pt-BR');
+      const filtrados = historicoOrcamentos.filter(h => {
+        const servicos = (h.itens || []).map(i => i.descricao || '').join(' ');
+        return `${h.cliente || ''} ${h.whats || ''} ${servicos}`.toLocaleLowerCase('pt-BR').includes(busca);
+      });
+      const totalGeral = filtrados.reduce((soma, h) => soma + (Number(h.total) || 0), 0);
+      resumo.textContent = `${filtrados.length} orçamento(s) • Soma dos valores: ${totalGeral.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}`;
+
+      if (filtrados.length === 0) {
+        lista.innerHTML = `<div class="text-center py-10"><div class="text-3xl mb-2">📂</div><p class="text-xs font-semibold text-slate-300">${busca ? 'Nenhum resultado encontrado' : 'Seu histórico está vazio'}</p><p class="text-[10px] text-slate-500 mt-1">${busca ? 'Tente buscar por outro nome ou serviço.' : 'Somente orçamentos salvos manualmente aparecem aqui. Exportar não cria registros.'}</p></div>`;
         return;
       }
 
-      lista.innerHTML = historicoOrcamentos.map(h => `
-        <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 flex justify-between items-center gap-3">
-          <div>
-            <p class="text-[10px] text-amber-400 font-bold">${h.data} ${h.pago ? '• <span class="text-emerald-400 font-bold">PAGO</span>' : ''}</p>
-            <p class="text-xs font-bold text-white">${h.cliente}</p>
-            <p class="text-[10px] text-slate-400">Total: R$ ${h.total.toFixed(2)} (${h.itens.length} itens)</p>
+      lista.innerHTML = filtrados.map(h => `
+        <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+          <div class="flex justify-between items-start gap-3">
+            <div class="min-w-0">
+              <p class="text-[10px] text-slate-500">${h.data || 'Data não informada'}</p>
+              <p class="text-sm font-bold text-white truncate mt-0.5">${h.cliente || 'Cliente sem nome'}</p>
+              <p class="text-[10px] text-slate-400 mt-1">${(h.itens || []).length} serviço(s)${h.whats ? ' • ' + h.whats : ''}</p>
+            </div>
+            <p class="text-sm font-black text-emerald-400 whitespace-nowrap">${(Number(h.total) || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</p>
           </div>
-          <div class="flex gap-1.5">
-            <button onclick="carregarDoHistorico(${h.id})" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-2 rounded-xl transition">
-              Carregar
-            </button>
-            <button onclick="excluirDoHistorico(${h.id})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold px-3 py-2 rounded-xl transition">
-              Excluir
-            </button>
+          <div class="text-[10px] text-slate-500 line-clamp-2">${(h.itens || []).map(i => `${i.qtd}x ${i.descricao || 'Serviço'}`).join(' · ')}</div>
+          <div class="flex gap-2 justify-end border-t border-slate-800 pt-2">
+            <button onclick="excluirDoHistorico(${h.id})" class="text-[10px] font-bold px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10 border border-red-500/20" title="Excluir este orçamento do histórico" aria-label="Excluir orçamento">🗑 Excluir</button>
+            <button onclick="abrirModalFecharOrcamento(${h.id})" class="text-[10px] font-bold px-3 py-2 rounded-lg text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20">✓ Fechar</button>
+            <button onclick="carregarDoHistorico(${h.id})" class="text-[10px] font-bold px-4 py-2 rounded-lg text-slate-950 bg-amber-500 hover:bg-amber-400">Abrir orçamento</button>
           </div>
         </div>
       `).join('');
     }
 
-    function fecharModalHistorico() { document.getElementById('modalHistorico').classList.add('hidden'); }
-
     function excluirDoHistorico(id) {
-      if (confirm('Deseja excluir este orçamento do histórico?')) {
-        historicoOrcamentos = historicoOrcamentos.filter(h => h.id != id);
+      const registro = historicoOrcamentos.find(item => String(item.id) === String(id));
+      if (!registro) return;
+      if (!confirm(`Excluir o orçamento de ${registro.cliente || 'cliente'}? Essa ação não pode ser desfeita.`)) return;
+      historicoOrcamentos = historicoOrcamentos.filter(item => String(item.id) !== String(id));
+      if (orcamentoSalvoAtual && String(orcamentoSalvoAtual.id) === String(id)) orcamentoSalvoAtual = null;
+      localStorage.setItem('db_historico', JSON.stringify(historicoOrcamentos));
+      renderizarHistorico(document.getElementById('buscaHistorico').value);
+    }
+
+    function abrirModalFecharOrcamento(id) {
+      const registro = historicoOrcamentos.find(item => String(item.id) === String(id));
+      if (!registro) return;
+      idOrcamentoEmFechamento = id;
+      document.getElementById('fecharOrcamentoCliente').textContent = `${registro.cliente || 'Cliente'} • ${(Number(registro.total)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+      document.getElementById('arquivoFormaPagamento').value = 'Pix';
+      document.getElementById('arquivoDataPagamento').value = new Date().toISOString().slice(0,10);
+      document.getElementById('arquivoComprovante').value = '';
+      document.getElementById('arquivoObsPagamento').value = '';
+      document.getElementById('modalFecharOrcamento').classList.remove('hidden');
+    }
+
+    function fecharModalFecharOrcamento() {
+      document.getElementById('modalFecharOrcamento').classList.add('hidden');
+      idOrcamentoEmFechamento = null;
+    }
+
+    function lerArquivoComoDataURL(arquivo) {
+      return new Promise((resolve, reject) => {
+        if (!arquivo) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve({ nome: arquivo.name, tipo: arquivo.type || 'application/octet-stream', dados: reader.result });
+        reader.onerror = () => reject(new Error('Não foi possível ler o comprovante selecionado.'));
+        reader.readAsDataURL(arquivo);
+      });
+    }
+
+    async function confirmarFechamentoOrcamento() {
+      const registro = historicoOrcamentos.find(item => String(item.id) === String(idOrcamentoEmFechamento));
+      if (!registro) { alert('Este orçamento não está mais no histórico. Atualize a lista e tente novamente.'); return; }
+      const forma = document.getElementById('arquivoFormaPagamento').value.trim();
+      const dataPagamento = document.getElementById('arquivoDataPagamento').value;
+      if (!forma) { alert('Informe como o cliente pagou (ex.: Pix).'); return; }
+      if (!dataPagamento) { alert('Informe a data do pagamento.'); return; }
+      const inputArquivo = document.getElementById('arquivoComprovante');
+      const arquivo = inputArquivo.files && inputArquivo.files[0];
+      if (arquivo && arquivo.size > 3 * 1024 * 1024) { alert('O comprovante deve ter no máximo 3 MB. Se necessário, reduza o tamanho da imagem ou PDF.'); return; }
+      const botao = document.getElementById('btnConfirmarArquivamento');
+      botao.disabled = true; botao.textContent = 'Arquivando...';
+      try {
+        const comprovante = await lerArquivoComoDataURL(arquivo);
+        const arquivado = {
+          ...JSON.parse(JSON.stringify(registro)),
+          status: 'arquivado',
+          arquivadoEm: new Date().toISOString(),
+          pagamento: { forma, data: dataPagamento, observacao: document.getElementById('arquivoObsPagamento').value.trim(), comprovante }
+        };
+        const novaListaArquivados = [arquivado, ...orcamentosArquivados.filter(item => String(item.id) !== String(arquivado.id))];
+        try { localStorage.setItem('db_orcamentos_arquivados', JSON.stringify(novaListaArquivados)); }
+        catch (storageError) { throw new Error('Não há espaço suficiente no armazenamento do navegador para guardar o comprovante. Use um arquivo menor.'); }
+        orcamentosArquivados = novaListaArquivados;
+        historicoOrcamentos = historicoOrcamentos.filter(item => String(item.id) !== String(registro.id));
         localStorage.setItem('db_historico', JSON.stringify(historicoOrcamentos));
-        abrirModalHistorico();
+        if (orcamentoSalvoAtual && String(orcamentoSalvoAtual.id) === String(registro.id)) orcamentoSalvoAtual = null;
+        fecharModalFecharOrcamento();
+        renderizarHistorico(document.getElementById('buscaHistorico').value);
+        alert('Orçamento fechado e movido para Arquivados!');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível arquivar este orçamento.');
+      } finally {
+        botao.disabled = false; botao.textContent = '✓ Confirmar e arquivar';
       }
     }
 
+    function abrirModalArquivados() {
+      document.getElementById('modalArquivados').classList.remove('hidden');
+      document.getElementById('buscaArquivados').value = '';
+      renderizarArquivados('');
+    }
+    function fecharModalArquivados() { document.getElementById('modalArquivados').classList.add('hidden'); }
+
+    function renderizarArquivados(termo = '') {
+      const lista = document.getElementById('listaArquivados');
+      const resumo = document.getElementById('resumoArquivados');
+      const busca = String(termo || '').trim().toLocaleLowerCase('pt-BR');
+      const filtrados = orcamentosArquivados.filter(h => `${h.cliente||''} ${h.whats||''} ${(h.itens||[]).map(i=>i.descricao||'').join(' ')} ${h.pagamento?.forma||''} ${h.pagamento?.observacao||''}`.toLocaleLowerCase('pt-BR').includes(busca));
+      const total = filtrados.reduce((s,h)=>s+(Number(h.total)||0),0);
+      resumo.textContent = `${filtrados.length} serviço(s) concluído(s) • Total recebido: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+      if (!filtrados.length) {
+        lista.innerHTML = `<div class="text-center py-12"><div class="text-4xl mb-2">📦</div><p class="text-sm font-bold text-slate-300">Nenhum orçamento arquivado</p><p class="text-[10px] text-slate-500 mt-1">Quando fechar um orçamento e registrar o pagamento, ele aparecerá aqui.</p></div>`;
+        return;
+      }
+      lista.innerHTML = filtrados.map(h => {
+        const pagamento = h.pagamento || {};
+        const data = pagamento.data ? new Date(`${pagamento.data}T12:00:00`).toLocaleDateString('pt-BR') : 'Não informada';
+        const comprovante = pagamento.comprovante;
+        return `<div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/20 space-y-3">
+          <div class="flex justify-between items-start gap-3"><div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[9px] uppercase font-black tracking-wider text-emerald-400">✓ Concluído e pago</span></div><p class="text-sm font-bold text-white mt-1 truncate">${h.cliente || 'Cliente sem nome'}</p><p class="text-[10px] text-slate-400 mt-1">Fechado em ${h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : '—'} • Pagamento: ${data}</p></div><p class="text-sm font-black text-emerald-400 whitespace-nowrap">${(Number(h.total)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p></div>
+          <p class="text-[10px] text-slate-400">${(h.itens||[]).map(i=>`${i.qtd}x ${i.descricao||'Serviço'}`).join(' · ')}</p>
+          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2"><p class="text-[10px] text-slate-300">💳 ${pagamento.forma || 'Pagamento registrado'}${pagamento.observacao ? ' • '+pagamento.observacao : ''}</p><div class="flex gap-2">${comprovante ? `<button onclick="abrirComprovanteArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-sky-300 border border-sky-500/20 hover:bg-sky-500/10">📎 Ver comprovante</button>` : ''}<button onclick="excluirArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-red-400 border border-red-500/20 hover:bg-red-500/10">🗑 Excluir</button></div></div>
+        </div>`;
+      }).join('');
+    }
+
+    function abrirComprovanteArquivado(id) {
+      const registro = orcamentosArquivados.find(item => String(item.id) === String(id));
+      const comprovante = registro && registro.pagamento && registro.pagamento.comprovante;
+      if (!comprovante || !comprovante.dados) return;
+      const janela = window.open();
+      if (!janela) { alert('Permita pop-ups para visualizar o comprovante.'); return; }
+      janela.document.write(`<title>${String(comprovante.nome||'Comprovante').replace(/[<>]/g,'')}</title><iframe src="${comprovante.dados}" style="border:0;width:100%;height:100vh" title="Comprovante"></iframe>`);
+      janela.document.close();
+    }
+
+    function excluirArquivado(id) {
+      const registro = orcamentosArquivados.find(item => String(item.id) === String(id));
+      if (!registro || !confirm(`Excluir permanentemente o arquivo de ${registro.cliente || 'cliente'}? O comprovante também será apagado.`)) return;
+      orcamentosArquivados = orcamentosArquivados.filter(item => String(item.id) !== String(id));
+      localStorage.setItem('db_orcamentos_arquivados', JSON.stringify(orcamentosArquivados));
+      renderizarArquivados(document.getElementById('buscaArquivados').value);
+    }
+
+    function fecharModalHistorico() { document.getElementById('modalHistorico').classList.add('hidden'); }
+
     function carregarDoHistorico(id) {
-      const h = historicoOrcamentos.find(item => item.id == id);
+      const h = historicoOrcamentos.find(item => String(item.id) === String(id));
       if (h) {
-        document.getElementById('orcNomeCliente').value = h.cliente;
+        document.getElementById('orcNomeCliente').value = h.cliente || '';
         document.getElementById('orcWhatsCliente').value = h.whats || '';
         document.getElementById('orcDiasGarantia').value = h.diasGarantia || 90;
         document.getElementById('orcObs').value = h.obs || '';
-        document.getElementById('checkPago').checked = h.pago || false;
-        calcularDatasGarantia();
-        itensOrcamento = JSON.parse(JSON.stringify(h.itens));
+        window.garantiaCalculada = { inicio: h.garantiaInicio || '', fim: h.garantiaFim || '', dias: h.diasGarantia || 90 };
+        itensOrcamento = JSON.parse(JSON.stringify(h.itens || []));
         orcamentoSalvoAtual = h;
         renderizarItens();
         fecharModalHistorico();
-        alert('Orçamento carregado!');
       }
     }
 
     async function criarBlobPDFOrcamento() {
       if (typeof html2pdf === 'undefined') {
-        throw new Error('A biblioteca html2pdf não foi carregada.');
+        throw new Error('A biblioteca html2pdf não foi carregada. Verifique sua conexão e recarregue a página.');
       }
 
       atualizarPreview();
+
       const original = document.getElementById('folhaOrcamento');
-      if (!original) throw new Error('A folha de orçamento não foi encontrada.');
+      if (!original) {
+        throw new Error('A folha de orçamento não foi encontrada.');
+      }
 
       const larguraOriginal = Math.ceil(original.getBoundingClientRect().width);
+      if (!larguraOriginal || original.getBoundingClientRect().height === 0) {
+        throw new Error('A pré-visualização está sem dimensões. Abra o painel e tente novamente.');
+      }
 
-      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
 
       const imagens = Array.from(original.querySelectorAll('img'));
       await Promise.all(imagens.map(img => {
         if (img.complete) return Promise.resolve();
-        return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
       }));
 
       const areaTemporaria = document.createElement('div');
-      areaTemporaria.style.cssText = `position:fixed; left:0; top:0; z-index:2147483647; width:${larguraOriginal}px; background:#ffffff; pointer-events:none; overflow:visible;`;
+      areaTemporaria.style.cssText = [
+        'position:fixed',
+        'left:0',
+        'top:0',
+        'z-index:2147483647',
+        'width:' + larguraOriginal + 'px',
+        'background:#ffffff',
+        'pointer-events:none',
+        'overflow:visible'
+      ].join(';');
 
       const copia = original.cloneNode(true);
       copia.removeAttribute('id');
@@ -1027,11 +1280,19 @@
       copia.style.maxWidth = 'none';
       copia.style.minWidth = larguraOriginal + 'px';
       copia.style.height = 'auto';
+      copia.style.minHeight = '0';
+      copia.style.maxHeight = 'none';
       copia.style.margin = '0';
       copia.style.position = 'static';
       copia.style.transform = 'none';
+      copia.style.filter = 'none';
+      copia.style.backdropFilter = 'none';
+      copia.style.boxShadow = 'none';
+      copia.style.borderRadius = '0';
       copia.style.backgroundColor = '#ffffff';
       copia.style.color = '#0f172a';
+      copia.style.visibility = 'visible';
+      copia.style.opacity = '1';
 
       areaTemporaria.appendChild(copia);
       document.body.appendChild(areaTemporaria);
@@ -1039,12 +1300,13 @@
       try {
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-        const nomeCliente = (document.getElementById('orcNomeCliente').value || 'Cliente').trim().replace(/[\\/:*?"<>|]/g, '_');
-        const prefixoArquivo = document.getElementById('checkPago').checked ? 'Recibo' : 'Orcamento';
+        const nomeCliente = (document.getElementById('orcNomeCliente').value || 'Cliente')
+          .trim()
+          .replace(/[\\/:*?"<>|]/g, '_');
 
         const opcoes = {
           margin: 8,
-          filename: `${prefixoArquivo}_${nomeCliente}.pdf`,
+          filename: `Orcamento_${nomeCliente}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: {
             scale: 2,
@@ -1061,7 +1323,10 @@
         };
 
         const blob = await html2pdf().set(opcoes).from(copia).outputPdf('blob');
-        if (!blob || blob.size < 1000) throw new Error('O PDF foi criado sem conteúdo.');
+
+        if (!blob || blob.size < 1000) {
+          throw new Error('O PDF foi criado sem conteúdo. Tente novamente e verifique o console do navegador.');
+        }
 
         return { blob, nomeArquivo: opcoes.filename };
       } finally {
@@ -1085,7 +1350,7 @@
         const resultado = await criarBlobPDFOrcamento();
         await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
       } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
+        console.error('Erro ao gerar PDF do orçamento:', error);
         alert('Não foi possível gerar o PDF. Detalhe: ' + (error.message || error));
       }
     }
@@ -1094,10 +1359,7 @@
       let whats = document.getElementById('orcWhatsCliente').value.replace(/\D/g, '');
       if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
 
-      const estaPago = document.getElementById('checkPago').checked;
-      const tituloMsg = estaPago ? 'COMPROVANTE DE PAGAMENTO / GARANTIA' : 'ORÇAMENTO';
-
-      let texto = `Olá *${document.getElementById('orcNomeCliente').value}*!\n\nSegue o *${tituloMsg}* enviado por *${empresa.nome || 'nossa empresa'}*:\n\n`;
+      let texto = `Olá *${document.getElementById('orcNomeCliente').value}*!\n\nSegue o orçamento enviado por *${empresa.nome || 'nossa empresa'}*:\n\n`;
       
       const itensValidos = itensOrcamento.filter(i => (parseFloat(i.valor) || 0) > 0);
       itensValidos.forEach(i => {
@@ -1105,17 +1367,13 @@
       });
       texto += `\n💰 *Total:* R$ ${calcularTotal().toFixed(2)}`;
       
-      if (estaPago) {
-        texto += `\n✅ *Status:* PAGAMENTO CONFIRMADO!`;
-      }
-
       const g = window.garantiaCalculada || { inicio: '', fim: '', dias: 90 };
       const obs = document.getElementById('orcObs').value;
       
       if (g.inicio && g.fim) texto += `\n🛡️ *Garantia (${g.dias} dias):* de ${formatarDataBR(g.inicio)} até ${formatarDataBR(g.fim)}`;
       if (obs) texto += `\n📝 *Obs:* ${obs}`;
       
-      if (!estaPago && empresa.pix) {
+      if (empresa.pix) {
         texto += `\n\n🔑 *DADOS PARA PAGAMENTO (PIX):*`;
         texto += `\n• Chave: ${empresa.pix}`;
         if (empresa.banco) texto += `\n• Banco: ${empresa.banco}`;
@@ -1123,7 +1381,7 @@
         texto += `\n⚠️ *ATENÇÃO:* Por favor, confira o banco e o nome do titular antes de realizar o pagamento!`;
       }
       
-      texto += `\n\n_Documento comercial. Não é nota fiscal._`;
+      texto += `\n\n_Documento comercial de orçamento. Não é nota fiscal._`;
 
       window.open(`https://api.whatsapp.com/send?phone=${whats}&text=${encodeURIComponent(texto)}`, '_blank');
     }
@@ -1133,15 +1391,18 @@
 
       try {
         const resultado = await criarBlobPDFOrcamento();
-        const arquivo = new File([resultado.blob], resultado.nomeArquivo, { type: 'application/pdf' });
+        const arquivo = new File([resultado.blob], resultado.nomeArquivo, {
+          type: 'application/pdf'
+        });
 
-        const podeCompartilharArquivo = navigator.canShare && navigator.canShare({ files: [arquivo] });
+        const podeCompartilharArquivo =
+          navigator.canShare && navigator.canShare({ files: [arquivo] });
 
         if (podeCompartilharArquivo && navigator.share) {
           await navigator.share({
             files: [arquivo],
-            title: 'Comprovante / Orçamento',
-            text: `Olá ${nomeCliente}, segue o seu documento em PDF.`
+            title: 'Orçamento Profissional',
+            text: `Olá ${nomeCliente}, segue o seu orçamento em PDF.`
           });
         } else {
           await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
@@ -1149,8 +1410,8 @@
         }
       } catch (error) {
         if (error && error.name === 'AbortError') return;
-        console.error('Erro ao compartilhar PDF:', error);
-        alert('Não foi possível gerar ou compartilhar o PDF.');
+        console.error('Erro ao gerar/compartilhar PDF:', error);
+        alert('Não foi possível gerar ou compartilhar o PDF. Detalhe: ' + (error.message || error));
       }
     }
   </script>
