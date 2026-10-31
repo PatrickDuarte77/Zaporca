@@ -209,7 +209,7 @@
         <div class="pt-2 flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
           <div>
             <p class="text-[11px] font-bold text-white">Status do Pagamento</p>
-            <p class="text-[9px] text-slate-400">Marque se o cliente já realizou o pagamento</p>
+            <p class="text-[9px] text-slate-400">Marque para emitir recibo e confirmar pagamento</p>
           </div>
           <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id="checkPago" onchange="atualizarPreview()" class="sr-only peer">
@@ -224,14 +224,17 @@
         </div>
       </div>
 
-      <!-- BOTÃO SALVAR ORÇAMENTO -->
-      <div class="pt-1">
-        <button onclick="salvarOrcamentoManual()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-3.5 px-4 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2">
-          💾 Salvar Orçamento (Gerar no Histórico)
+      <!-- BOTÕES DE AÇÃO DO FORMULÁRIO (SALVAR E FECHAR/LIMPAR) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+        <button onclick="salvarOrcamentoManual()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-3.5 px-4 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+          💾 Salvar Orçamento
+        </button>
+        <button onclick="fecharOuLimparNota()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 px-4 rounded-2xl text-xs sm:text-sm transition border border-slate-700 flex items-center justify-center gap-2 cursor-pointer">
+          🗑️ Fechar / Limpar Nota
         </button>
       </div>
 
-      <!-- BLOCO 4: AÇÕES -->
+      <!-- BLOCO 4: AÇÕES DE ENVIO -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
         <button onclick="executarAcao('texto')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-3 rounded-2xl text-xs transition shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
           💬 Enviar Texto
@@ -474,6 +477,19 @@
       localStorage.setItem('db_historico', JSON.stringify(historicoOrcamentos));
 
       alert('Orçamento salvo com sucesso no Histórico!');
+    }
+
+    function fecharOuLimparNota() {
+      if (confirm('Deseja limpar os dados para iniciar um novo atendimento/nota?')) {
+        document.getElementById('orcNomeCliente').value = '';
+        document.getElementById('orcWhatsCliente').value = '';
+        document.getElementById('orcObs').value = '';
+        document.getElementById('checkPago').checked = false;
+        itensOrcamento = [];
+        adicionarLinhaVazia();
+        orcamentoSalvoAtual = null;
+        atualizarPreview();
+      }
     }
 
     async function executarAcao(tipoAcao) {
@@ -869,7 +885,6 @@
       const obs = document.getElementById('orcObs').value;
       const estaPago = document.getElementById('checkPago').checked;
 
-      // Altera o visual do documento entre Orçamento e Nota Paga
       const badgeStatus = document.getElementById('pvBadgeStatus');
       const blocoPixContainer = document.getElementById('pvBlocoPixContainer');
       const blocoPagoConfirmado = document.getElementById('pvBlocoPagoConfirmado');
@@ -945,14 +960,27 @@
             <p class="text-xs font-bold text-white">${h.cliente}</p>
             <p class="text-[10px] text-slate-400">Total: R$ ${h.total.toFixed(2)} (${h.itens.length} itens)</p>
           </div>
-          <button onclick="carregarDoHistorico(${h.id})" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-2 rounded-xl transition">
-            Carregar / Editar
-          </button>
+          <div class="flex gap-1.5">
+            <button onclick="carregarDoHistorico(${h.id})" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-2 rounded-xl transition">
+              Carregar
+            </button>
+            <button onclick="excluirDoHistorico(${h.id})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold px-3 py-2 rounded-xl transition">
+              Excluir
+            </button>
+          </div>
         </div>
       `).join('');
     }
 
     function fecharModalHistorico() { document.getElementById('modalHistorico').classList.add('hidden'); }
+
+    function excluirDoHistorico(id) {
+      if (confirm('Deseja excluir este orçamento do histórico?')) {
+        historicoOrcamentos = historicoOrcamentos.filter(h => h.id != id);
+        localStorage.setItem('db_historico', JSON.stringify(historicoOrcamentos));
+        abrirModalHistorico();
+      }
+    }
 
     function carregarDoHistorico(id) {
       const h = historicoOrcamentos.find(item => item.id == id);
