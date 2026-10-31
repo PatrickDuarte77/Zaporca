@@ -10,8 +10,8 @@ exports.handler = async function(event, context) {
     const dadosBody = JSON.parse(event.body || '{}');
     const emailUsuario = dadosBody.email || 'cliente@zaporca.com';
 
-    // O teu Access Token de teste do Mercado Pago
-    const ACCESS_TOKEN = "TEST-173442750746113-103101-892442c98d068c9c1abba32672732575-1859037918";
+    // Token seguro obtido através das Variáveis de Ambiente da Netlify
+    const ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
     const payload = JSON.stringify({
       transaction_amount: 35.00,
