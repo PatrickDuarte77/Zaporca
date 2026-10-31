@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZapOrça Prático ⚡</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Script do html2pdf com carregamento seguro para evitar travamentos -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#090d16">
@@ -152,7 +153,7 @@
         </div>
       </div>
 
-      <!-- BOTÃO DE INSTALAÇÃO PWA (ADICIONAR À TELA INICIAL) -->
+      <!-- BOTÃO DE INSTALAÇÃO PWA -->
       <button id="btnInstalarApp" onclick="instalarPWA()" class="hidden w-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 font-bold py-3 px-4 rounded-2xl text-xs sm:text-sm transition shadow-lg flex items-center justify-center gap-2 cursor-pointer">
         📱 Adicionar ZapOrça à Tela Inicial / Computador
       </button>
@@ -1546,40 +1547,18 @@
 
       try {
         const resultado = await criarBlobPDFOrcamento();
-        const arquivo = new File([resultado.blob], resultado.nomeArquivo, {
-          type: 'application/pdf'
-        });
-
-        const podeCompartilharArquivo =
-          navigator.canShare && navigator.canShare({ files: [arquivo] });
-
-        if (podeCompartilharArquivo && navigator.share) {
-          try {
-            await navigator.share({
-              files: [arquivo],
-              title: 'Orçamento Profissional',
-              text: `Olá ${nomeCliente}, segue o seu orçamento em PDF.`
-            });
-            return;
-          } catch (shareErr) {
-            if (shareErr.name === 'AbortError') return;
-            console.warn('Compartilhamento nativo falhou, alternando para download...', shareErr);
-          }
-        }
-
-        // Fallback seguro: Baixa o PDF e abre o WhatsApp com o texto
         await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
         
         let whats = document.getElementById('orcWhatsCliente').value.replace(/\D/g, '');
         if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
         
-        const texto = `Olá *${nomeCliente}*! Segue o seu orçamento em PDF gerado por *${empresa.nome || 'nossa empresa'}*. (O arquivo foi baixado no seu dispositivo para você anexar aqui).`;
+        const texto = `Olá *${nomeCliente}*! Segue o seu orçamento em PDF gerado por *${empresa.nome || 'nossa empresa'}*.\n\n(O arquivo PDF foi baixado no seu aparelho. Basta clicar no ícone de clipe 📎 ou anexo no WhatsApp e selecioná-lo para enviar!).`;
         
         window.open(`https://api.whatsapp.com/send?${whats ? 'phone=' + whats + '&' : ''}text=${encodeURIComponent(texto)}`, '_blank');
 
       } catch (error) {
         if (error && error.name === 'AbortError') return;
-        console.error('Erro ao gerar/compartilhar PDF:', error);
+        console.error('Erro ao gerar PDF para o WhatsApp:', error);
         alert('Não foi possível gerar o PDF. Detalhe: ' + (error.message || error));
       }
     }
