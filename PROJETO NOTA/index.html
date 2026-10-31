@@ -537,7 +537,7 @@
       document.getElementById('orcWhatsCliente').value = '';
       document.getElementById('orcObs').value = '';
       document.getElementById('orcDiasGarantia').value = '90';
-      itensOrcamento = [{ descricao: '', qtd: 1, valor: 0 }];
+      itensOrcamento = [{ descricao: '', detalhes: '', qtd: 1, valor: 0 }];
       calcularDatasGarantia();
       renderizarItens();
       atualizarPreview();
@@ -744,6 +744,7 @@
       const normalizar = valor => String(valor || '').trim().toLocaleLowerCase('pt-BR');
       const itens = (registro.itens || []).map(i => ({
         descricao: normalizar(i.descricao),
+        detalhes: normalizar(i.detalhes),
         qtd: Number(i.qtd) || 0,
         valor: Number(i.valor) || 0
       })).sort((a, b) => a.descricao.localeCompare(b.descricao) || a.qtd - b.qtd || a.valor - b.valor);
@@ -883,7 +884,7 @@
     }
 
     function adicionarLinhaVazia() {
-      itensOrcamento.push({ descricao: '', qtd: 1, valor: 0 });
+      itensOrcamento.push({ descricao: '', detalhes: '', qtd: 1, valor: 0 });
       renderizarItens();
     }
 
@@ -893,8 +894,9 @@
       const index = servicosSalvos.findIndex(s => s.nome.toLowerCase() === item.descricao.toLowerCase());
       if (index >= 0) {
         servicosSalvos[index].valor = item.valor;
+        servicosSalvos[index].detalhes = item.detalhes;
       } else {
-        servicosSalvos.push({ id: Date.now(), nome: item.descricao, valor: item.valor });
+        servicosSalvos.push({ id: Date.now(), nome: item.descricao, detalhes: item.detalhes, valor: item.valor });
       }
       localStorage.setItem('db_servicos', JSON.stringify(servicosSalvos));
       atualizarSelectsSalvos();
@@ -905,7 +907,7 @@
       if (!id) return;
       const servico = servicosSalvos.find(s => s.id == id);
       if (servico) {
-        itensOrcamento.push({ descricao: servico.nome, qtd: 1, valor: servico.valor });
+        itensOrcamento.push({ descricao: servico.nome, detalhes: servico.detalhes || '', qtd: 1, valor: servico.valor });
         renderizarItens();
         document.getElementById('selectServicoSalvo').value = "";
       }
@@ -923,9 +925,10 @@
 
       lista.innerHTML = servicosSalvos.map(s => `
         <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
-          <div class="flex gap-2">
-            <input type="text" id="editServNome_${s.id}" value="${s.nome}" class="flex-1 p-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
-            <input type="number" id="editServValor_${s.id}" value="${s.valor}" class="w-24 p-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white text-right">
+          <div class="space-y-1">
+            <input type="text" id="editServNome_${s.id}" value="${s.nome}" placeholder="Nome do Serviço" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+            <input type="text" id="editServDetalhes_${s.id}" value="${s.detalhes || ''}" placeholder="Descrição opcional" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+            <input type="number" id="editServValor_${s.id}" value="${s.valor}" placeholder="Valor R$" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
           </div>
           <div class="flex justify-end gap-2">
             <button onclick="atualizarServicoSalvo(${s.id})" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-1.5 rounded-xl transition">Atualizar</button>
@@ -938,10 +941,12 @@
     function fecharModalServicos() { document.getElementById('modalServicos').classList.add('hidden'); }
     function atualizarServicoSalvo(id) {
       const novoNome = document.getElementById(`editServNome_${id}`).value;
+      const novosDetalhes = document.getElementById(`editServDetalhes_${id}`).value;
       const novoValor = parseFloat(document.getElementById(`editServValor_${id}`).value) || 0;
       const servico = servicosSalvos.find(s => s.id == id);
       if (servico) {
         servico.nome = novoNome;
+        servico.detalhes = novosDetalhes;
         servico.valor = novoValor;
         localStorage.setItem('db_servicos', JSON.stringify(servicosSalvos));
         atualizarSelectsSalvos();
@@ -960,6 +965,7 @@
       container.innerHTML = itensOrcamento.map((item, idx) => `
         <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
           <input type="text" value="${item.descricao}" oninput="atualizarItem(${idx}, 'descricao', this.value)" placeholder="Nome do Serviço" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500">
+          <input type="text" value="${item.detalhes || ''}" oninput="atualizarItem(${idx}, 'detalhes', this.value)" placeholder="Descrição opcional do serviço..." class="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-amber-500">
           <div class="flex gap-2 items-center">
             <div class="flex-1">
               <label class="text-[9px] text-slate-400 font-bold">Qtd</label>
@@ -980,7 +986,7 @@
     }
 
     function atualizarItem(idx, campo, valor) {
-      itensOrcamento[idx][campo] = campo === 'descricao' ? valor : parseFloat(valor) || 0;
+      itensOrcamento[idx][campo] = (campo === 'descricao' || campo === 'detalhes') ? valor : parseFloat(valor) || 0;
       atualizarPreview();
     }
 
@@ -1065,7 +1071,10 @@
 
       document.getElementById('pvTabelaItens').innerHTML = itensValidos.map(i => `
         <tr class="border-b border-slate-100">
-          <td class="py-2 text-slate-800 font-medium">${i.descricao || 'Serviço'}</td>
+          <td class="py-2 text-slate-800 font-medium">
+            <div>${i.descricao || 'Serviço'}</div>
+            ${i.detalhes ? `<div class="text-[10px] text-slate-500 font-normal">${i.detalhes}</div>` : ''}
+          </td>
           <td class="py-2 text-center text-slate-600">${i.qtd}</td>
           <td class="py-2 text-right text-slate-600">R$ ${(i.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
           <td class="py-2 text-right font-bold text-slate-900">R$ ${(i.qtd * i.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
@@ -1086,7 +1095,7 @@
       const resumo = document.getElementById('resumoHistorico');
       const busca = String(termo || '').trim().toLocaleLowerCase('pt-BR');
       const filtrados = historicoOrcamentos.filter(h => {
-        const servicos = (h.itens || []).map(i => i.descricao || '').join(' ');
+        const servicos = (h.itens || []).map(i => (i.descricao || '') + ' ' + (i.detalhes || '')).join(' ');
         return `${h.cliente || ''} ${h.whats || ''} ${servicos}`.toLocaleLowerCase('pt-BR').includes(busca);
       });
       const totalGeral = filtrados.reduce((soma, h) => soma + (Number(h.total) || 0), 0);
@@ -1107,7 +1116,7 @@
             </div>
             <p class="text-sm font-black text-emerald-400 whitespace-nowrap">${(Number(h.total) || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</p>
           </div>
-          <div class="text-[10px] text-slate-500 line-clamp-2">${(h.itens || []).map(i => `${i.qtd}x ${i.descricao || 'Serviço'}`).join(' · ')}</div>
+          <div class="text-[10px] text-slate-500 line-clamp-2">${(h.itens || []).map(i => `${i.qtd}x ${i.descricao || 'Serviço'}${i.detalhes ? ' ('+i.detalhes+')' : ''}`).join(' · ')}</div>
           <div class="flex gap-2 justify-end border-t border-slate-800 pt-2">
             <button onclick="excluirDoHistorico(${h.id})" class="text-[10px] font-bold px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10 border border-red-500/20" title="Excluir este orçamento do histórico" aria-label="Excluir orçamento">🗑 Excluir</button>
             <button onclick="abrirModalFecharOrcamento(${h.id})" class="text-[10px] font-bold px-3 py-2 rounded-lg text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20">✓ Fechar</button>
@@ -1202,7 +1211,7 @@
       const lista = document.getElementById('listaArquivados');
       const resumo = document.getElementById('resumoArquivados');
       const busca = String(termo || '').trim().toLocaleLowerCase('pt-BR');
-      const filtrados = orcamentosArquivados.filter(h => `${h.cliente||''} ${h.whats||''} ${(h.itens||[]).map(i=>i.descricao||'').join(' ')} ${h.pagamento?.forma||''} ${h.pagamento?.observacao||''}`.toLocaleLowerCase('pt-BR').includes(busca));
+      const filtrados = orcamentosArquivados.filter(h => `${h.cliente||''} ${h.whats||''} ${(h.itens||[]).map(i=>(i.descricao||'')+' '+(i.detalhes||'')).join(' ')} ${h.pagamento?.forma||''} ${h.pagamento?.observacao||''}`.toLocaleLowerCase('pt-BR').includes(busca));
       const total = filtrados.reduce((s,h)=>s+(Number(h.total)||0),0);
       resumo.textContent = `${filtrados.length} serviço(s) concluído(s) • Total recebido: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
       if (!filtrados.length) {
@@ -1215,7 +1224,7 @@
         const comprovante = pagamento.comprovante;
         return `<div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/20 space-y-3">
           <div class="flex justify-between items-start gap-3"><div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[9px] uppercase font-black tracking-wider text-emerald-400">✓ Concluído e pago</span></div><p class="text-sm font-bold text-white mt-1 truncate">${h.cliente || 'Cliente sem nome'}</p><p class="text-[10px] text-slate-400 mt-1">Fechado em ${h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : '—'} • Pagamento: ${dataPagamentoFmt}</p></div><p class="text-sm font-black text-emerald-400 whitespace-nowrap">${(Number(h.total)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p></div>
-          <p class="text-[10px] text-slate-400">${(h.itens||[]).map(i=>`${i.qtd}x ${i.descricao||'Serviço'}`).join(' · ')}</p>
+          <p class="text-[10px] text-slate-400">${(h.itens||[]).map(i=>`${i.qtd}x ${i.descricao||'Serviço'}${i.detalhes ? ' ('+i.detalhes+')' : ''}`).join(' · ')}</p>
           <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2">
             <p class="text-[10px] text-slate-300">💳 ${pagamento.forma || 'Pagamento registrado'}${pagamento.observacao ? ' • '+pagamento.observacao : ''}</p>
             <div class="flex gap-2 flex-wrap">
@@ -1260,7 +1269,10 @@
 
       document.getElementById('recTabelaItens').innerHTML = (h.itens || []).map(i => `
         <tr class="border-b border-slate-100">
-          <td class="py-2 text-slate-800 font-medium">${i.descricao || 'Serviço'}</td>
+          <td class="py-2 text-slate-800 font-medium">
+            <div>${i.descricao || 'Serviço'}</div>
+            ${i.detalhes ? `<div class="text-[10px] text-slate-500 font-normal">${i.detalhes}</div>` : ''}
+          </td>
           <td class="py-2 text-center text-slate-600">${i.qtd}</td>
           <td class="py-2 text-right text-slate-600">R$ ${(i.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
           <td class="py-2 text-right font-bold text-slate-900">R$ ${(i.qtd * i.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
@@ -1321,7 +1333,7 @@
       let texto = `Olá *${h.cliente}*! Aqui está o comprovante do seu serviço concluído com *${empresa.nome || 'nossa empresa'}*:\n\n`;
       
       (h.itens || []).forEach(i => {
-        texto += `• ${i.qtd}x ${i.descricao} - R$ ${(i.qtd * i.valor).toFixed(2)}\n`;
+        texto += `• ${i.qtd}x ${i.descricao}${i.detalhes ? ' ('+i.detalhes+')' : ''} - R$ ${(i.qtd * i.valor).toFixed(2)}\n`;
       });
       
       texto += `\n💰 *Total Pago:* R$ ${(Number(h.total) || 0).toFixed(2)}`;
@@ -1504,7 +1516,9 @@
       
       const itensValidos = itensOrcamento.filter(i => (parseFloat(i.valor) || 0) > 0);
       itensValidos.forEach(i => {
-        if(i.descricao) texto += `• ${i.qtd}x ${i.descricao} - R$ ${(i.qtd * i.valor).toFixed(2)}\n`;
+        if(i.descricao) {
+          texto += `• ${i.qtd}x ${i.descricao}${i.detalhes ? ' ('+i.detalhes+')' : ''} - R$ ${(i.qtd * i.valor).toFixed(2)}\n`;
+        }
       });
       texto += `\n💰 *Total:* R$ ${calcularTotal().toFixed(2)}`;
       
@@ -1527,48 +1541,48 @@
       window.open(`https://api.whatsapp.com/send?phone=${whats}&text=${encodeURIComponent(texto)}`, '_blank');
     }
 
-async function enviarPDFWhatsApp() {
-  const nomeCliente = document.getElementById('orcNomeCliente').value || 'Cliente';
+    async function enviarPDFWhatsApp() {
+      const nomeCliente = document.getElementById('orcNomeCliente').value || 'Cliente';
 
-  try {
-    const resultado = await criarBlobPDFOrcamento();
-    const arquivo = new File([resultado.blob], resultado.nomeArquivo, {
-      type: 'application/pdf'
-    });
-
-    const podeCompartilharArquivo =
-      navigator.canShare && navigator.canShare({ files: [arquivo] });
-
-    if (podeCompartilharArquivo && navigator.share) {
       try {
-        await navigator.share({
-          files: [arquivo],
-          title: 'Orçamento Profissional',
-          text: `Olá ${nomeCliente}, segue o seu orçamento em PDF.`
+        const resultado = await criarBlobPDFOrcamento();
+        const arquivo = new File([resultado.blob], resultado.nomeArquivo, {
+          type: 'application/pdf'
         });
-        return;
-      } catch (shareErr) {
-        if (shareErr.name === 'AbortError') return; // Usuário cancelou o share
-        console.warn('Compartilhamento nativo falhou, alternando para download...', shareErr);
+
+        const podeCompartilharArquivo =
+          navigator.canShare && navigator.canShare({ files: [arquivo] });
+
+        if (podeCompartilharArquivo && navigator.share) {
+          try {
+            await navigator.share({
+              files: [arquivo],
+              title: 'Orçamento Profissional',
+              text: `Olá ${nomeCliente}, segue o seu orçamento em PDF.`
+            });
+            return;
+          } catch (shareErr) {
+            if (shareErr.name === 'AbortError') return;
+            console.warn('Compartilhamento nativo falhou, alternando para download...', shareErr);
+          }
+        }
+
+        // Fallback seguro: Baixa o PDF e abre o WhatsApp com o texto
+        await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
+        
+        let whats = document.getElementById('orcWhatsCliente').value.replace(/\D/g, '');
+        if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
+        
+        const texto = `Olá *${nomeCliente}*! Segue o seu orçamento em PDF gerado por *${empresa.nome || 'nossa empresa'}*. (O arquivo foi baixado no seu dispositivo para você anexar aqui).`;
+        
+        window.open(`https://api.whatsapp.com/send?${whats ? 'phone=' + whats + '&' : ''}text=${encodeURIComponent(texto)}`, '_blank');
+
+      } catch (error) {
+        if (error && error.name === 'AbortError') return;
+        console.error('Erro ao gerar/compartilhar PDF:', error);
+        alert('Não foi possível gerar o PDF. Detalhe: ' + (error.message || error));
       }
     }
-
-    // Fallback seguro: Baixa o PDF e abre o WhatsApp com o texto
-    await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
-    
-    let whats = document.getElementById('orcWhatsCliente').value.replace(/\D/g, '');
-    if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
-    
-    const texto = `Olá *${nomeCliente}*! Segue o seu orçamento em PDF gerado por *${empresa.nome || 'nossa empresa'}*. (O arquivo foi baixado no seu dispositivo para você anexar aqui).`;
-    
-    window.open(`https://api.whatsapp.com/send?${whats ? 'phone=' + whats + '&' : ''}text=${encodeURIComponent(texto)}`, '_blank');
-
-  } catch (error) {
-    if (error && error.name === 'AbortError') return;
-    console.error('Erro ao gerar/compartilhar PDF:', error);
-    alert('Não foi possível gerar o PDF. Detalhe: ' + (error.message || error));
-  }
-}
   </script>
 </body>
 </html>
