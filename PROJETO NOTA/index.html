@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZapOrça Prático ⚡</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Script do html2pdf com carregamento seguro para evitar travamentos -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#090d16">
@@ -1547,19 +1546,27 @@
 
       try {
         const resultado = await criarBlobPDFOrcamento();
-        await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
-        
-        let whats = document.getElementById('orcWhatsCliente').value.replace(/\D/g, '');
-        if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
-        
-        const texto = `Olá *${nomeCliente}*! Segue o seu orçamento em PDF gerado por *${empresa.nome || 'nossa empresa'}*.\n\n(O arquivo PDF foi baixado no seu aparelho. Basta clicar no ícone de clipe 📎 ou anexo no WhatsApp e selecioná-lo para enviar!).`;
-        
-        window.open(`https://api.whatsapp.com/send?${whats ? 'phone=' + whats + '&' : ''}text=${encodeURIComponent(texto)}`, '_blank');
+        const arquivo = new File([resultado.blob], resultado.nomeArquivo, {
+          type: 'application/pdf'
+        });
+
+        if (navigator.canShare && navigator.canShare({ files: [arquivo] }) && navigator.share) {
+          await navigator.share({
+            files: [arquivo],
+            title: 'Orçamento - ' + nomeCliente,
+            text: `Orçamento de ${nomeCliente}`
+          });
+          return;
+        } else {
+          // Se o navegador do celular ou PC não suportar o compartilhamento de arquivos direto, faz o download automático
+          await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
+          alert('O arquivo PDF foi baixado no seu dispositivo para você anexar e enviar no WhatsApp!');
+        }
 
       } catch (error) {
         if (error && error.name === 'AbortError') return;
-        console.error('Erro ao gerar PDF para o WhatsApp:', error);
-        alert('Não foi possível gerar o PDF. Detalhe: ' + (error.message || error));
+        console.error('Erro ao enviar PDF:', error);
+        alert('Não foi possível enviar o PDF. Detalhe: ' + (error.message || error));
       }
     }
   </script>
