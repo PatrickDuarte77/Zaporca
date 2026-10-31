@@ -46,6 +46,10 @@ exports.handler = async function(event, context) {
       req.end();
     });
 
+    // ADICIONADO: Mostra no log da Netlify o status e a resposta exata do Mercado Pago
+    console.log("Status MP:", respostaMP.statusCode);
+    console.log("Resposta MP Bruta:", respostaMP.body);
+
     const respostaJson = JSON.parse(respostaMP.body);
 
     if (respostaMP.statusCode >= 200 && respostaMP.statusCode < 300) {
@@ -67,6 +71,7 @@ exports.handler = async function(event, context) {
     }
 
   } catch (erro) {
+    console.error("Erro interno na função:", erro.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ sucesso: false, mensagem: erro.message })
