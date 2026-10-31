@@ -1187,14 +1187,50 @@
       }
       lista.innerHTML = filtrados.map(h => {
         const pagamento = h.pagamento || {};
-        const data = pagamento.data ? new Date(`${pagamento.data}T12:00:00`).toLocaleDateString('pt-BR') : 'Não informada';
+        const dataPagamentoFmt = pagamento.data ? new Date(`${pagamento.data}T12:00:00`).toLocaleDateString('pt-BR') : 'Não informada';
         const comprovante = pagamento.comprovante;
         return `<div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/20 space-y-3">
-          <div class="flex justify-between items-start gap-3"><div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[9px] uppercase font-black tracking-wider text-emerald-400">✓ Concluído e pago</span></div><p class="text-sm font-bold text-white mt-1 truncate">${h.cliente || 'Cliente sem nome'}</p><p class="text-[10px] text-slate-400 mt-1">Fechado em ${h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : '—'} • Pagamento: ${data}</p></div><p class="text-sm font-black text-emerald-400 whitespace-nowrap">${(Number(h.total)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p></div>
+          <div class="flex justify-between items-start gap-3"><div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[9px] uppercase font-black tracking-wider text-emerald-400">✓ Concluído e pago</span></div><p class="text-sm font-bold text-white mt-1 truncate">${h.cliente || 'Cliente sem nome'}</p><p class="text-[10px] text-slate-400 mt-1">Fechado em ${h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : '—'} • Pagamento: ${dataPagamentoFmt}</p></div><p class="text-sm font-black text-emerald-400 whitespace-nowrap">${(Number(h.total)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p></div>
           <p class="text-[10px] text-slate-400">${(h.itens||[]).map(i=>`${i.qtd}x ${i.descricao||'Serviço'}`).join(' · ')}</p>
-          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2"><p class="text-[10px] text-slate-300">💳 ${pagamento.forma || 'Pagamento registrado'}${pagamento.observacao ? ' • '+pagamento.observacao : ''}</p><div class="flex gap-2">${comprovante ? `<button onclick="abrirComprovanteArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-sky-300 border border-sky-500/20 hover:bg-sky-500/10">📎 Ver comprovante</button>` : ''}<button onclick="excluirArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-red-400 border border-red-500/20 hover:bg-red-500/10">🗑 Excluir</button></div></div>
+          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2">
+            <p class="text-[10px] text-slate-300">💳 ${pagamento.forma || 'Pagamento registrado'}${pagamento.observacao ? ' • '+pagamento.observacao : ''}</p>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="enviarComprovanteArquivadoWhats('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20">💬 Enviar comprovante</button>
+              ${comprovante ? `<button onclick="abrirComprovanteArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-sky-300 border border-sky-500/20 hover:bg-sky-500/10">📎 Ver arquivo</button>` : ''}
+              <button onclick="excluirArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-red-400 border border-red-500/20 hover:bg-red-500/10">🗑 Excluir</button>
+            </div>
+          </div>
         </div>`;
       }).join('');
+    }
+
+    function enviarComprovanteArquivadoWhats(id) {
+      const h = orcamentosArquivados.find(item => String(item.id) === String(id));
+      if (!h) return;
+      let whats = (h.whats || '').replace(/\D/g, '');
+      if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
+
+      const pagamento = h.pagamento || {};
+      const dataPagamentoFmt = pagamento.data ? new Date(`${pagamento.data}T12:00:00`).toLocaleDateString('pt-BR') : 'Não informada';
+      
+      let texto = `Olá *${h.cliente}*! Aqui está o comprovante do seu serviço concluído com *${empresa.nome || 'nossa empresa'}*:\n\n`;
+      
+      (h.itens || []).forEach(i => {
+        texto += `• ${i.qtd}x ${i.descricao} - R$ ${(i.qtd * i.valor).toFixed(2)}\n`;
+      });
+      
+      texto += `\n💰 *Total Pago:* R$ ${(Number(h.total) || 0).toFixed(2)}`;
+      texto += `\n💳 *Forma de Pagamento:* ${pagamento.forma || 'Pix'}`;
+      texto += `\n📅 *Data do Pagamento:* ${dataPagamentoFmt}`;
+      if (pagamento.observacao) texto += `\n📝 *Obs:* ${pagamento.observacao}`;
+
+      if (h.garantiaInicio && h.garantiaFim) {
+        texto += `\n\n🛡️ *Garantia (${h.diasGarantia || 90} dias):* de ${formatarDataBR(h.garantiaInicio)} até ${formatarDataBR(h.garantiaFim)}`;
+      }
+
+      texto += `\n\n_Agradecemos pela preferência!_`;
+
+      window.open(`https://api.whatsapp.com/send?${whats ? 'phone=' + whats + '&' : ''}text=${encodeURIComponent(texto)}`, '_blank');
     }
 
     function abrirComprovanteArquivado(id) {
