@@ -255,16 +255,13 @@
         </button>
       </div>
 
-      <!-- BLOCO 4: AÇÕES -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-        <button onclick="executarAcao('texto')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-3 rounded-2xl text-xs transition shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
-          💬 Enviar Texto
+      <!-- BLOCO 4: AÇÕES (Com botão de baixar PDF direto e limpo) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+        <button onclick="executarAcao('texto')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-3 rounded-2xl text-xs transition shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+          💬 Enviar Texto WhatsApp
         </button>
-        <button onclick="executarAcao('pdf_whats')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-3 rounded-2xl text-xs transition shadow-lg shadow-indigo-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
-          📎 Enviar PDF
-        </button>
-        <button onclick="executarAcao('pdf_download')" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-3 rounded-2xl text-xs transition shadow-lg shadow-slate-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
-          📥 Baixar PDF
+        <button onclick="executarAcao('pdf_download')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-3 rounded-2xl text-xs transition shadow-lg shadow-indigo-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+          📥 Baixar PDF Profissional
         </button>
       </div>
 
@@ -634,7 +631,6 @@
       }
 
       if (tipoAcao === 'texto') enviarTextoWhatsApp();
-      if (tipoAcao === 'pdf_whats') enviarPDFWhatsApp();
       if (tipoAcao === 'pdf_download') gerarPDF();
     }
 
@@ -1539,85 +1535,6 @@
       texto += `\n\n_Documento comercial de orçamento. Não é nota fiscal._`;
 
       window.open(`https://api.whatsapp.com/send?phone=${whats}&text=${encodeURIComponent(texto)}`, '_blank');
-    }
-
-    async function enviarPDFWhatsApp() {
-      const campoNome = document.getElementById('orcNomeCliente');
-      const campoWhats = document.getElementById('orcWhatsCliente');
-      const nomeCliente = (campoNome?.value || 'Cliente').trim() || 'Cliente';
-      const numeroLimpo = (campoWhats?.value || '').replace(/\D/g, '');
-      const whats = (numeroLimpo.length === 10 || numeroLimpo.length === 11)
-        ? '55' + numeroLimpo
-        : numeroLimpo;
-      const mensagem = `Olá *${nomeCliente}*! Segue o seu orçamento em PDF gerado por *${empresa.nome || 'nossa empresa'}*.`;
-
-      // Em computadores, abrir a aba imediatamente evita bloqueio de pop-up
-      // depois que a geração assíncrona do PDF terminar.
-      const agente = navigator.userAgent || '';
-      const dispositivoMovel = (navigator.userAgentData && navigator.userAgentData.mobile === true) ||
-        /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(agente);
-      let abaWhatsApp = null;
-      if (!dispositivoMovel) {
-        abaWhatsApp = window.open('about:blank', '_blank');
-      }
-
-      try {
-        const resultado = await criarBlobPDFOrcamento();
-        const arquivo = new File([resultado.blob], resultado.nomeArquivo, {
-          type: 'application/pdf',
-          lastModified: Date.now()
-        });
-
-        // Celular: prioriza o compartilhamento nativo com o PDF anexado.
-        // O usuário escolhe WhatsApp e confirma o envio no próprio aplicativo.
-        const compartilhamentoDeArquivoDisponivel = dispositivoMovel &&
-          typeof navigator.share === 'function' &&
-          typeof navigator.canShare === 'function' &&
-          navigator.canShare({ files: [arquivo] });
-
-        if (compartilhamentoDeArquivoDisponivel) {
-          try {
-            await navigator.share({
-              files: [arquivo],
-              title: 'Orçamento - ' + nomeCliente,
-              text: mensagem
-            });
-            if (abaWhatsApp && !abaWhatsApp.closed) abaWhatsApp.close();
-            return;
-          } catch (shareErr) {
-            // Cancelamento é uma escolha do usuário: não baixar nem abrir WhatsApp.
-            if (shareErr && shareErr.name === 'AbortError') {
-              if (abaWhatsApp && !abaWhatsApp.closed) abaWhatsApp.close();
-              return;
-            }
-            console.warn('Compartilhamento nativo indisponível; usando envio assistido.', shareErr);
-          }
-        }
-
-        // Fallback para celulares sem compartilhamento de arquivos e para PCs.
-        await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
-
-        const textoFallback = dispositivoMovel
-          ? `${mensagem}\n\nO PDF foi salvo no aparelho. No WhatsApp, toque no clipe/anexo, escolha Documento e selecione ${resultado.nomeArquivo}.`
-          : `${mensagem}\n\nO PDF foi baixado para o computador. No WhatsApp, clique no clipe, escolha Documento e selecione o arquivo ${resultado.nomeArquivo}.`;
-        const baseWhatsApp = dispositivoMovel
-          ? 'https://api.whatsapp.com/send?'
-          : 'https://web.whatsapp.com/send?';
-        const urlWhatsApp = `${baseWhatsApp}${whats ? 'phone=' + whats + '&' : ''}text=${encodeURIComponent(textoFallback)}`;
-
-        if (abaWhatsApp && !abaWhatsApp.closed) {
-          abaWhatsApp.location.href = urlWhatsApp;
-        } else {
-          const novaAba = window.open(urlWhatsApp, '_blank');
-          if (!novaAba) {
-            alert('O PDF foi baixado, mas o navegador bloqueou a abertura do WhatsApp. Abra o WhatsApp e anexe o arquivo baixado: ' + resultado.nomeArquivo);
-          }
-        }
-      } catch (error) {
-        if (abaWhatsApp && !abaWhatsApp.closed) abaWhatsApp.close();
-        console.error('Erro ao preparar PDF para WhatsApp:', error);
-        alert('Não foi possível preparar o PDF. ' + (error?.message || 'Verifique sua conexão e tente novamente.'));
-      }
     }
   </script>
 </body>
