@@ -1187,14 +1187,54 @@
       }
       lista.innerHTML = filtrados.map(h => {
         const pagamento = h.pagamento || {};
-        const data = pagamento.data ? new Date(`${pagamento.data}T12:00:00`).toLocaleDateString('pt-BR') : 'Não informada';
+        const dataPagamentoFmt = pagamento.data ? formatarDataBR(pagamento.data) : 'Não informada';
         const comprovante = pagamento.comprovante;
         return `<div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/20 space-y-3">
-          <div class="flex justify-between items-start gap-3"><div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[9px] uppercase font-black tracking-wider text-emerald-400">✓ Concluído e pago</span></div><p class="text-sm font-bold text-white mt-1 truncate">${h.cliente || 'Cliente sem nome'}</p><p class="text-[10px] text-slate-400 mt-1">Fechado em ${h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : '—'} • Pagamento: ${data}</p></div><p class="text-sm font-black text-emerald-400 whitespace-nowrap">${(Number(h.total)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p></div>
+          <div class="flex justify-between items-start gap-3"><div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[9px] uppercase font-black tracking-wider text-emerald-400">✓ Concluído e pago</span></div><p class="text-sm font-bold text-white mt-1 truncate">${h.cliente || 'Cliente sem nome'}</p><p class="text-[10px] text-slate-400 mt-1">Pagamento em ${dataPagamentoFmt} via ${pagamento.forma || 'Pix'} • Garantia: ${h.diasGarantia || 90} dias (${formatarDataBR(h.garantiaInicio)} a ${formatarDataBR(h.garantiaFim)})</p></div><p class="text-sm font-black text-emerald-400 whitespace-nowrap">${(Number(h.total)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p></div>
           <p class="text-[10px] text-slate-400">${(h.itens||[]).map(i=>`${i.qtd}x ${i.descricao||'Serviço'}`).join(' · ')}</p>
-          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2"><p class="text-[10px] text-slate-300">💳 ${pagamento.forma || 'Pagamento registrado'}${pagamento.observacao ? ' • '+pagamento.observacao : ''}</p><div class="flex gap-2">${comprovante ? `<button onclick="abrirComprovanteArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-sky-300 border border-sky-500/20 hover:bg-sky-500/10">📎 Ver comprovante</button>` : ''}<button onclick="excluirArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-red-400 border border-red-500/20 hover:bg-red-500/10">🗑 Excluir</button></div></div>
+          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2">
+            <p class="text-[10px] text-slate-300">💳 ${pagamento.forma || 'Pagamento registrado'}${pagamento.observacao ? ' • '+pagamento.observacao : ''}</p>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="enviarBaixaWhatsApp('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 flex items-center gap-1">💬 Enviar ao Cliente</button>
+              ${comprovante ? `<button onclick="abrirComprovanteArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-sky-300 border border-sky-500/20 hover:bg-sky-500/10">📎 Ver comprovante</button>` : ''}
+              <button onclick="excluirArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-red-400 border border-red-500/20 hover:bg-red-500/10">🗑 Excluir</button>
+            </div>
+          </div>
         </div>`;
       }).join('');
+    }
+
+    function enviarBaixaWhatsApp(id) {
+      const h = orcamentosArquivados.find(item => String(item.id) === String(id));
+      if (!h) return;
+
+      let whats = (h.whats || '').replace(/\D/g, '');
+      if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
+
+      const pagamento = h.pagamento || {};
+      const dataPagamentoFmt = pagamento.data ? formatarDataBR(pagamento.data) : 'Não informada';
+
+      let texto = `Olá *${h.cliente}*!\n\nAqui estão os detalhes da conclusão do seu serviço com *${empresa.nome || 'nossa empresa'}*:\n\n`;
+      
+      (h.itens || []).forEach(i => {
+        if(i.descricao) texto += `• ${i.qtd}x ${i.descricao} - R$ ${(i.qtd * i.valor).toFixed(2)}\n`;
+      });
+      
+      texto += `\n💰 *Total Pago:* ${(Number(h.total)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+      texto += `\n💳 *Forma de Pagamento:* ${pagamento.forma || 'Pix'}`;
+      texto += `\n📅 *Data do Pagamento:* ${dataPagamentoFmt}`;
+      
+      if (h.garantiaInicio && h.garantiaFim) {
+        texto += `\n\n🛡️ *GARANTIA (${h.diasGarantia || 90} dias):*\nDe ${formatarDataBR(h.garantiaInicio)} até ${formatarDataBR(h.garantiaFim)}`;
+      }
+
+      if (pagamento.observacao) {
+        texto += `\n📝 *Obs:* ${pagamento.observacao}`;
+      }
+
+      texto += `\n\n_Agradecemos pela preferência! Guarde esta mensagem como comprovante e garantia._`;
+
+      window.open(`https://api.whatsapp.com/send?phone=${whats}&text=${encodeURIComponent(texto)}`, '_blank');
     }
 
     function abrirComprovanteArquivado(id) {
@@ -1212,208 +1252,4 @@
       if (!registro || !confirm(`Excluir permanentemente o arquivo de ${registro.cliente || 'cliente'}? O comprovante também será apagado.`)) return;
       orcamentosArquivados = orcamentosArquivados.filter(item => String(item.id) !== String(id));
       localStorage.setItem('db_orcamentos_arquivados', JSON.stringify(orcamentosArquivados));
-      renderizarArquivados(document.getElementById('buscaArquivados').value);
-    }
-
-    function fecharModalHistorico() { document.getElementById('modalHistorico').classList.add('hidden'); }
-
-    function carregarDoHistorico(id) {
-      const h = historicoOrcamentos.find(item => String(item.id) === String(id));
-      if (h) {
-        document.getElementById('orcNomeCliente').value = h.cliente || '';
-        document.getElementById('orcWhatsCliente').value = h.whats || '';
-        document.getElementById('orcDiasGarantia').value = h.diasGarantia || 90;
-        document.getElementById('orcObs').value = h.obs || '';
-        window.garantiaCalculada = { inicio: h.garantiaInicio || '', fim: h.garantiaFim || '', dias: h.diasGarantia || 90 };
-        itensOrcamento = JSON.parse(JSON.stringify(h.itens || []));
-        orcamentoSalvoAtual = h;
-        renderizarItens();
-        fecharModalHistorico();
-      }
-    }
-
-    async function criarBlobPDFOrcamento() {
-      if (typeof html2pdf === 'undefined') {
-        throw new Error('A biblioteca html2pdf não foi carregada. Verifique sua conexão e recarregue a página.');
-      }
-
-      atualizarPreview();
-
-      const original = document.getElementById('folhaOrcamento');
-      if (!original) {
-        throw new Error('A folha de orçamento não foi encontrada.');
-      }
-
-      const larguraOriginal = Math.ceil(original.getBoundingClientRect().width);
-      if (!larguraOriginal || original.getBoundingClientRect().height === 0) {
-        throw new Error('A pré-visualização está sem dimensões. Abra o painel e tente novamente.');
-      }
-
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
-
-      const imagens = Array.from(original.querySelectorAll('img'));
-      await Promise.all(imagens.map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise(resolve => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-      }));
-
-      const areaTemporaria = document.createElement('div');
-      areaTemporaria.style.cssText = [
-        'position:fixed',
-        'left:0',
-        'top:0',
-        'z-index:2147483647',
-        'width:' + larguraOriginal + 'px',
-        'background:#ffffff',
-        'pointer-events:none',
-        'overflow:visible'
-      ].join(';');
-
-      const copia = original.cloneNode(true);
-      copia.removeAttribute('id');
-      copia.style.width = larguraOriginal + 'px';
-      copia.style.maxWidth = 'none';
-      copia.style.minWidth = larguraOriginal + 'px';
-      copia.style.height = 'auto';
-      copia.style.minHeight = '0';
-      copia.style.maxHeight = 'none';
-      copia.style.margin = '0';
-      copia.style.position = 'static';
-      copia.style.transform = 'none';
-      copia.style.filter = 'none';
-      copia.style.backdropFilter = 'none';
-      copia.style.boxShadow = 'none';
-      copia.style.borderRadius = '0';
-      copia.style.backgroundColor = '#ffffff';
-      copia.style.color = '#0f172a';
-      copia.style.visibility = 'visible';
-      copia.style.opacity = '1';
-
-      areaTemporaria.appendChild(copia);
-      document.body.appendChild(areaTemporaria);
-
-      try {
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-        const nomeCliente = (document.getElementById('orcNomeCliente').value || 'Cliente')
-          .trim()
-          .replace(/[\\/:*?"<>|]/g, '_');
-
-        const opcoes = {
-          margin: 8,
-          filename: `Orcamento_${nomeCliente}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            allowTaint: false,
-            logging: false,
-            backgroundColor: '#ffffff',
-            scrollX: 0,
-            scrollY: 0,
-            windowWidth: Math.max(document.documentElement.clientWidth, larguraOriginal)
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'] }
-        };
-
-        const blob = await html2pdf().set(opcoes).from(copia).outputPdf('blob');
-
-        if (!blob || blob.size < 1000) {
-          throw new Error('O PDF foi criado sem conteúdo. Tente novamente e verifique o console do navegador.');
-        }
-
-        return { blob, nomeArquivo: opcoes.filename };
-      } finally {
-        areaTemporaria.remove();
-      }
-    }
-
-    async function baixarBlobPDF(blob, nomeArquivo) {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = nomeArquivo;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
-    }
-
-    async function gerarPDF() {
-      try {
-        const resultado = await criarBlobPDFOrcamento();
-        await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
-      } catch (error) {
-        console.error('Erro ao gerar PDF do orçamento:', error);
-        alert('Não foi possível gerar o PDF. Detalhe: ' + (error.message || error));
-      }
-    }
-
-    function enviarTextoWhatsApp() {
-      let whats = document.getElementById('orcWhatsCliente').value.replace(/\D/g, '');
-      if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
-
-      let texto = `Olá *${document.getElementById('orcNomeCliente').value}*!\n\nSegue o orçamento enviado por *${empresa.nome || 'nossa empresa'}*:\n\n`;
-      
-      const itensValidos = itensOrcamento.filter(i => (parseFloat(i.valor) || 0) > 0);
-      itensValidos.forEach(i => {
-        if(i.descricao) texto += `• ${i.qtd}x ${i.descricao} - R$ ${(i.qtd * i.valor).toFixed(2)}\n`;
-      });
-      texto += `\n💰 *Total:* R$ ${calcularTotal().toFixed(2)}`;
-      
-      const g = window.garantiaCalculada || { inicio: '', fim: '', dias: 90 };
-      const obs = document.getElementById('orcObs').value;
-      
-      if (g.inicio && g.fim) texto += `\n🛡️ *Garantia (${g.dias} dias):* de ${formatarDataBR(g.inicio)} até ${formatarDataBR(g.fim)}`;
-      if (obs) texto += `\n📝 *Obs:* ${obs}`;
-      
-      if (empresa.pix) {
-        texto += `\n\n🔑 *DADOS PARA PAGAMENTO (PIX):*`;
-        texto += `\n• Chave: ${empresa.pix}`;
-        if (empresa.banco) texto += `\n• Banco: ${empresa.banco}`;
-        if (empresa.titular) texto += `\n• Titular: ${empresa.titular}`;
-        texto += `\n⚠️ *ATENÇÃO:* Por favor, confira o banco e o nome do titular antes de realizar o pagamento!`;
-      }
-      
-      texto += `\n\n_Documento comercial de orçamento. Não é nota fiscal._`;
-
-      window.open(`https://api.whatsapp.com/send?phone=${whats}&text=${encodeURIComponent(texto)}`, '_blank');
-    }
-
-    async function enviarPDFWhatsApp() {
-      const nomeCliente = document.getElementById('orcNomeCliente').value || 'Cliente';
-
-      try {
-        const resultado = await criarBlobPDFOrcamento();
-        const arquivo = new File([resultado.blob], resultado.nomeArquivo, {
-          type: 'application/pdf'
-        });
-
-        const podeCompartilharArquivo =
-          navigator.canShare && navigator.canShare({ files: [arquivo] });
-
-        if (podeCompartilharArquivo && navigator.share) {
-          await navigator.share({
-            files: [arquivo],
-            title: 'Orçamento Profissional',
-            text: `Olá ${nomeCliente}, segue o seu orçamento em PDF.`
-          });
-        } else {
-          await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
-          alert('O PDF foi baixado. Agora você pode anexá-lo à conversa do WhatsApp.');
-        }
-      } catch (error) {
-        if (error && error.name === 'AbortError') return;
-        console.error('Erro ao gerar/compartilhar PDF:', error);
-        alert('Não foi possível gerar ou compartilhar o PDF. Detalhe: ' + (error.message || error));
-      }
-    }
-  </script>
-</body>
-</html>
+      renderizar
