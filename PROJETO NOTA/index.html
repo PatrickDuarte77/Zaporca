@@ -118,6 +118,11 @@
         </div>
       </div>
 
+      <!-- BOTÃO DE INSTALAÇÃO PWA (ADICIONAR À TELA INICIAL) -->
+      <button id="btnInstalarApp" onclick="instalarPWA()" class="hidden w-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 font-bold py-3 px-4 rounded-2xl text-xs sm:text-sm transition shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+        📱 Adicionar ZapOrça à Tela Inicial / Computador
+      </button>
+
       <!-- BANNER LIMITES -->
       <div class="bg-gradient-to-r from-slate-950 via-indigo-950/40 to-slate-950 border border-indigo-500/20 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3 shadow-inner">
         <div>
@@ -339,6 +344,34 @@
       });
     });
 
+    // LÓGICA DE INSTALAÇÃO DO PWA (ATALHO TELA INICIAL)
+    let eventoInstalacaoPWA = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      eventoInstalacaoPWA = e;
+      const btn = document.getElementById('btnInstalarApp');
+      if (btn) btn.classList.remove('hidden');
+    });
+
+    async function instalarPWA() {
+      if (!eventoInstalacaoPWA) {
+        alert('O atalho já está instalado ou seu navegador gerencia isso automaticamente pelo menu (três pontinhos -> Adicionar à Tela Inicial).');
+        return;
+      }
+      eventoInstalacaoPWA.prompt();
+      const { outcome } = await eventoInstalacaoPWA.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('btnInstalarApp').classList.add('hidden');
+      }
+      eventoInstalacaoPWA = null;
+    }
+
+    window.addEventListener('appinstalled', () => {
+      const btn = document.getElementById('btnInstalarApp');
+      if (btn) btn.classList.add('hidden');
+    });
+
     async function carregarDadosUsuario(user) {
       const refDoc = db.collection('usuarios').doc(user.uid);
       const doc = await refDoc.get();
@@ -363,7 +396,6 @@
       const elTexto = document.getElementById('textoUsosRestantes');
       const elInfoUsuario = document.getElementById('infoUsuarioLogado');
 
-      // Atualiza o nome / e-mail de boas-vindas do usuário conectado
       if (usuarioAtual && usuarioAtual.email) {
         elInfoUsuario.innerText = `Olá, ${usuarioAtual.email}, bem-vindo`;
       }
@@ -987,7 +1019,7 @@
 
     async function gerarPDF() {
       try {
-        const resultado = alt = await criarBlobPDFOrcamento();
+        const resultado = await criarBlobPDFOrcamento();
         await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
       } catch (error) {
         console.error('Erro ao gerar PDF:', error);
