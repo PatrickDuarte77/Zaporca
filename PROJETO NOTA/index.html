@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZapOrça Prático ⚡</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#090d16">
+</head>
+<body class="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 min-h-screen p-3 sm:p-6 font-sans text-slate-100 flex items-center justify-center">
+
+  <!-- TELA DE LOGIN / AUTENTICAÇÃO -->
+  <div id="telaLogin" class="w-full max-w-md bg-slate-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-800 p-6 sm:p-8 space-y-6">
+    <div class="text-center space-y-2">
+      <div class="w-14 h-14 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-amber-500/20 text-2xl mb-4">⚡</div>
+      <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center justify-center gap-2">
+        ZapOrça <span class="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Prático</span>
+      </h1>
+      <p id="subtextoLogin" class="text-xs text-slate-400">Entre com sua Conta Google para acessar o painel.</p>
+    </div>
+
+    <div id="blocoBotoesLogin" class="space-y-4 pt-2">
+      <button onclick="fazerLoginGoogle()" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3.5 px-4 rounded-2xl text-xs sm:text-sm transition shadow-md flex items-center justify-center gap-3 active:scale-95 cursor-pointer">
+        <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+        Entrar com a Conta Google
+      </button>
+
+      <div class="relative flex py-2 items-center">
+        <div class="flex-grow border-t border-slate-800"></div>
+        <span class="flex-shrink mx-4 text-slate-500 text-[10px] uppercase tracking-wider font-semibold">ou e-mail e senha</span>
+        <div class="flex-grow border-t border-slate-800"></div>
+      </div>
+
+      <form onsubmit="fazerLoginEmail(event)" class="space-y-3">
+        <input type="email" id="loginEmail" required placeholder="Seu e-mail profissional" class="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+        <input type="password" id="loginSenha" required minlength="6" placeholder="Sua senha (mínimo 6 dígitos)" class="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+        <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-3.5 rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer">
+          Acessar / Criar Conta
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PIX AUTOMÁTICO (MERCADO PAGO) -->
+  <div id="modalPix" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl relative">
+      <button onclick="fecharModalPix()" class="absolute top-4 right-4 text-slate-400 hover:text-white font-bold text-lg">✕</button>
+      
+      <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">⚡</div>
+      
+      <div>
+        <h3 class="text-lg font-black text-white">Desbloqueie o PRO</h3>
+        <p class="text-[11px] text-slate-400 mt-0.5">Tenha orçamentos ilimitados para sempre.</p>
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+        <!-- CONTEÚDO DINÂMICO DO PIX -->
+      </div>
+
+      <button onclick="enviarComprovanteWhats()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-2xl text-xs transition shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 active:scale-95">
+        💬 Já fiz o Pix! Enviar Comprovante
+      </button>
+    </div>
+  </div>
+
+  <!-- APLICAÇÃO PRINCIPAL -->
+  <div id="painelApp" class="hidden max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    
+    <!-- COLUNA DA ESQUERDA: FORMULÁRIO (7 colunas) -->
+    <div class="lg:col-span-7 bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-800 p-4 sm:p-6 space-y-6">
+      
+      <!-- TOPO / HEADER DO PAINEL -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-xl flex items-center justify-center text-slate-950 font-black text-lg shadow-md shadow-amber-500/20">⚡</div>
+          <div>
+            <h1 class="text-lg sm:text-xl font-black tracking-tight text-white">ZapOrça <span class="text-amber-400">Prático</span></h1>
+            <p id="infoUsuarioLogado" class="text-[10px] text-slate-400">Painel do Prestador</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="badgePlano" class="text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">Grátis</span>
+          <button onclick="fazerLogout()" class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 font-bold px-2.5 py-1.5 rounded-xl hover:bg-red-500/20 transition">
+            Sair
+          </button>
+        </div>
+      </div>
+
+      <!-- BANNER DE STATUS DE USOS -->
+      <div class="bg-gradient-to-r from-slate-950 via-indigo-950/40 to-slate-950 border border-indigo-500/20 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3 shadow-inner">
+        <div>
+          <p class="text-[10px] uppercase tracking-wider text-indigo-400 font-bold">Plano Atual</p>
+          <p id="textoUsosRestantes" class="text-xs font-semibold text-slate-200 mt-0.5">Carregando limites...</p>
+        </div>
+        <button onclick="abrirModalPix()" class="w-full sm:w-auto bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 transition transform active:scale-95 flex items-center justify-center gap-1.5 shrink-0">
+          👑 Virar PRO Vitalício
+        </button>
+      </div>
+
+      <!-- BLOCO 1: SEUS DADOS -->
+      <div class="space-y-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/60">
+        <h2 class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5"><span>🏢</span> 1. Dados da Sua Empresa</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input type="text" id="empresaNome" placeholder="Seu Nome ou Empresa" class="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+          <input type="text" id="empresaCnpj" placeholder="CNPJ (Opcional)" class="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input type="text" id="empresaTel" placeholder="WhatsApp de Contato" class="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+          <input type="text" id="empresaPix" placeholder="Chave Pix para Recebimento" class="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 font-semibold block mb-1">Logotipo da Empresa</label>
+          <input type="file" accept="image/*" onchange="carregarLogo(event)" class="text-xs text-slate-400 p-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 transition cursor-pointer">
+        </div>
+      </div>
+
+      <!-- BLOCO 2: CLIENTE -->
+      <div class="space-y-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/60">
+        <div class="flex justify-between items-center">
+          <h2 class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5"><span>👤</span> 2. Dados do Cliente</h2>
+          <select id="selectClienteSalvo" onchange="puxarClienteSalvo()" class="text-xs p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 focus:outline-none focus:border-amber-500">
+            <option value="">📁 Clientes Salvos...</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="flex gap-1.5">
+            <input type="text" id="orcNomeCliente" placeholder="Nome do Cliente" class="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 flex-1 focus:outline-none focus:border-amber-500 transition">
+            <button onclick="salvarClienteAtual()" title="Salvar Cliente" class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3.5 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition">💾</button>
+          </div>
+          <input type="text" id="orcWhatsCliente" placeholder="WhatsApp (com DDD)" class="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+        </div>
+      </div>
+
+      <!-- BLOCO 3: ITENS E SERVIÇOS -->
+      <div class="space-y-3 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/60">
+        <div class="flex justify-between items-center">
+          <h2 class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5"><span>🛠️</span> 3. Serviços e Preços</h2>
+          <select id="selectServicoSalvo" onchange="puxarServicoSalvo(this.value)" class="text-xs p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 focus:outline-none focus:border-amber-500">
+            <option value="">📂 Catálogo de Serviços...</option>
+          </select>
+        </div>
+
+        <div id="listaItens" class="space-y-3"></div>
+
+        <button onclick="adicionarLinhaVazia()" class="w-full py-2.5 border-2 border-dashed border-slate-800 text-slate-400 font-semibold rounded-xl text-xs hover:border-amber-500/50 hover:text-amber-400 hover:bg-amber-500/5 transition">
+          + Adicionar Outro Serviço
+        </button>
+
+        <div class="flex justify-between items-center pt-3 border-t border-slate-800 text-sm sm:text-base font-bold text-white">
+          <span>Valor Total:</span>
+          <span class="text-emerald-400 text-lg sm:text-xl font-black">R$ <span id="valorTotalExibicao">0,00</span></span>
+        </div>
+      </div>
+
+      <!-- BLOCO 4: AÇÕES -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
+        <button onclick="executarAcao('texto')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-3 rounded-2xl text-xs transition shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+          💬 Enviar Texto
+        </button>
+        <button onclick="executarAcao('pdf_whats')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-3 rounded-2xl text-xs transition shadow-lg shadow-indigo-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+          📎 Enviar PDF
+        </button>
+        <button onclick="executarAcao('pdf_download')" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-3 rounded-2xl text-xs transition shadow-lg shadow-slate-950 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+          📥 Baixar PDF
+        </button>
+      </div>
+
+    </div>
+
+    <!-- COLUNA DA DIREITA: PRÉ-VISUALIZAÇÃO A4 (5 colunas) -->
+    <div class="lg:col-span-5 w-full">
+      <div class="bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-800 p-4 sm:p-6 space-y-4 sticky top-6">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+          <span>Pré-visualização do Documento</span>
+          <span class="text-[9px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">Layout A4</span>
+        </h2>
+        
+        <div id="folhaOrcamento" class="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-xl space-y-6 text-xs font-sans flex flex-col justify-between">
+          <div class="space-y-6">
+            <div class="flex justify-between items-start border-b border-slate-100 pb-5">
+              <div>
+                <img id="pvLogo" src="" class="h-12 sm:h-14 mb-2 hidden object-contain">
+                <h3 id="pvEmpresaNome" class="font-extrabold text-sm sm:text-base text-slate-900">Sua Empresa</h3>
+                <p id="pvEmpresaCnpj" class="text-slate-500 text-[10px] hidden"></p>
+                <p id="pvEmpresaTel" class="text-slate-500 text-[10px]">Contato: --</p>
+              </div>
+              <div class="text-right">
+                <span class="bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full text-[9px] sm:text-[10px] tracking-wide">ORÇAMENTO</span>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 p-3.5 rounded-xl space-y-1 border border-slate-100">
+              <p class="text-slate-400 font-bold uppercase text-[9px] tracking-wider">CLIENTE</p>
+              <p id="pvClienteNome" class="font-bold text-slate-900 text-xs sm:text-sm">--</p>
+              <p id="pvClienteWhats" class="text-slate-500 text-[10px]">--</p>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left min-w-[240px]">
+                <thead>
+                  <tr class="border-b border-slate-200 text-slate-400 text-[9px] font-bold tracking-wider">
+                    <th class="py-2">SERVIÇO</th>
+                    <th class="py-2 text-center">QTD</th>
+                    <th class="py-2 text-right">UNIT.</th>
+                    <th class="py-2 text-right">TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody id="pvTabelaItens"></tbody>
+              </table>
+            </div>
+
+            <div class="border-t border-slate-100 pt-4 flex justify-between items-center">
+              <div>
+                <p class="text-slate-400 text-[9px] font-bold uppercase tracking-wider">PIX PARA PAGAMENTO:</p>
+                <p id="pvEmpresaPix" class="font-mono text-slate-800 font-bold text-xs">--</p>
+              </div>
+              <div class="text-right">
+                <p class="text-slate-400 text-[9px] font-bold uppercase tracking-wider">TOTAL GERAL</p>
+                <p id="pvValorTotal" class="text-base sm:text-lg font-black text-emerald-600">R$ 0,00</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-3 border-t border-dashed border-slate-200 text-center">
+            <p class="text-[8px] text-slate-400 font-medium leading-relaxed">
+              * Documento Auxiliar de Orçamento comercial. **Não é Nota Fiscal** e não possui validade fiscal para fins tributários perante órgãos governamentais.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FIREBASE SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    const SEU_WHATSAPP_ADM = "5548996603797"; 
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCUSNNlAkwmCldBvhkhKKEIVBNC77djSG0",
+      authDomain: "zaporca-f8810.firebaseapp.com",
+      projectId: "zaporca-f8810",
+      storageBucket: "zaporca-f8810.firebasestorage.app",
+      messagingSenderId: "187707799679",
+      appId: "1:187707799679:web:635ae84c1d5c1c8d90a74a",
+      measurementId: "G-W7WYR0962E"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let usuarioAtual = null;
+    let dadosUsuarioDB = { status: 'gratis', bonusIniciais: 5, ultimoUsoData: '', usosHoje: 0 };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          usuarioAtual = user;
+          await carregarDadosUsuario(user);
+          liberarApp();
+        } else {
+          bloquearApp();
+        }
+      });
+    });
+
+    async function carregarDadosUsuario(user) {
+      const refDoc = db.collection('usuarios').doc(user.uid);
+      const doc = await refDoc.get();
+      const hojeDataStr = new Date().toISOString().split('T')[0];
+
+      if (!doc.exists) {
+        dadosUsuarioDB = { email: user.email, status: 'gratis', bonusIniciais: 5, ultimoUsoData: hojeDataStr, usosHoje: 0 };
+        await refDoc.set(dadosUsuarioDB);
+      } else {
+        dadosUsuarioDB = doc.data();
+        if (dadosUsuarioDB.ultimoUsoData !== hojeDataStr) {
+          dadosUsuarioDB.ultimoUsoData = hojeDataStr;
+          dadosUsuarioDB.usosHoje = 0;
+          await refDoc.update({ ultimoUsoData: hojeDataStr, usosHoje: 0 });
+        }
+      }
+      atualizarInterfaceLimites();
+    }
+
+    function atualizarInterfaceLimites() {
+      const elBadge = document.getElementById('badgePlano');
+      const elTexto = document.getElementById('textoUsosRestantes');
+
+      if (dadosUsuarioDB.status === 'pro') {
+        elBadge.innerText = "PRO VITALÍCIO";
+        elBadge.className = "text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30";
+        elTexto.innerText = "👑 Conta PRO: Orçamentos Ilimitados!";
+      } else {
+        elBadge.innerText = "GRÁTIS";
+        if (dadosUsuarioDB.bonusIniciais > 0) {
+          elTexto.innerText = `🎁 Você tem ${dadosUsuarioDB.bonusIniciais} orçamentos bônus.`;
+        } else {
+          const restantesHoje = Math.max(0, 1 - dadosUsuarioDB.usosHoje);
+          elTexto.innerText = `⏳ Cota diária: ${restantesHoje} de 1 disponível hoje.`;
+        }
+      }
+    }
+
+    async function executarAcao(tipoAcao) {
+      if (dadosUsuarioDB.status !== 'pro') {
+        if (dadosUsuarioDB.bonusIniciais > 0) {
+          dadosUsuarioDB.bonusIniciais--;
+        } else if (dadosUsuarioDB.usosHoje < 1) {
+          dadosUsuarioDB.usosHoje++;
+        } else {
+          abrirModalPix();
+          return;
+        }
+
+        if (usuarioAtual) {
+          await db.collection('usuarios').doc(usuarioAtual.uid).update({
+            bonusIniciais: dadosUsuarioDB.bonusIniciais,
+            usosHoje: dadosUsuarioDB.usosHoje
+          });
+        }
+        atualizarInterfaceLimites();
+      }
+
+      if (tipoAcao === 'texto') enviarTextoWhatsApp();
+      if (tipoAcao === 'pdf_whats') enviarPDFWhatsApp();
+      if (tipoAcao === 'pdf_download') gerarPDF();
+    }
+
+    async function abrirModalPix() {
+      const modal = document.getElementById('modalPix');
+      modal.classList.remove('hidden');
+
+      const containerPix = modal.querySelector('.bg-slate-950');
+      containerPix.innerHTML = `
+        <p class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Acesso Vitalício Único</p>
+        <p class="text-2xl font-black text-emerald-400">R$ 35,00</p>
+        <div class="py-8 text-center text-xs text-slate-400 animate-pulse">
+          Gerando Pix automático no Mercado Pago...
+        </div>
+      `;
+
+      try {
+        const emailUser = usuarioAtual ? usuarioAtual.email : 'cliente@zaporca.com';
+        
+        const resposta = await fetch('/.netlify/functions/criar-pix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailUser })
+        });
+
+        const dados = await resposta.json();
+
+        if (dados.sucesso) {
+          containerPix.innerHTML = `
+            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Acesso Vitalício Único</p>
+            <p class="text-2xl font-black text-emerald-400">R$ 35,00</p>
+            
+            <div class="bg-white p-2 rounded-xl w-36 h-36 mx-auto flex items-center justify-center border border-slate-200 shadow-sm">
+              <img src="data:image/jpeg;base64,${dados.qrCodeBase64}" alt="QR Code Pix" class="w-full h-full object-contain">
+            </div>
+
+            <div class="space-y-2">
+              <input type="text" id="inputCopiaCola" readonly value="${dados.qrCodeCopyPaste}" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl text-[10px] text-slate-300 text-center select-all">
+              <button onclick="copiarPixCopiaCola()" class="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold py-2 rounded-xl text-xs transition">
+                📋 Copiar Código Pix
+              </button>
+            </div>
+            <p class="text-[9px] text-slate-400">Escaneie o QR Code ou use o Copia e Cola no banco.</p>
+          `;
+        } else {
+          containerPix.innerHTML = `<p class="text-xs text-red-400 p-4">Erro ao gerar Pix. Tente novamente.</p>`;
+        }
+      } catch (err) {
+        console.error(err);
+        containerPix.innerHTML = `<p class="text-xs text-red-400 p-4">Erro de conexão com o servidor.</p>`;
+      }
+    }
+
+    function copiarPixCopiaCola() {
+      const input = document.getElementById('inputCopiaCola');
+      input.select();
+      input.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(input.value);
+      alert('Código Pix Copia e Cola copiado com sucesso!');
+    }
+
+    function fecharModalPix() {
+      document.getElementById('modalPix').classList.add('hidden');
+    }
+
+    function enviarComprovanteWhats() {
+      const msg = `Olá! Fiz o Pix de R$ 35,00 para liberar o ZapOrça Vitalício Ilimitado. Segue o meu comprovante!`;
+      window.open(`https://api.whatsapp.com/send?phone=${SEU_WHATSAPP_ADM}&text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+   function fazerLoginGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      
+      // Força o uso de popup limpo com persistência local
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+          return auth.signInWithPopup(provider);
+        })
+        .catch(err => {
+          console.error("Erro no login Google:", err);
+          alert("Erro ao autenticar com Google: " + err.message);
+        });
+    }
+
+    function fazerLoginEmail(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const senha = document.getElementById('loginSenha').value;
+
+      auth.signInWithEmailAndPassword(email, senha).catch((err) => {
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+          auth.createUserWithEmailAndPassword(email, senha).catch(errCreate => {
+            alert("Erro ao criar conta: " + errCreate.message);
+          });
+        } else {
+          alert("Erro no login: " + err.message);
+        }
+      });
+    }
+
+    function fazerLogout() {
+      auth.signOut();
+    }
+
+    function liberarApp() {
+      document.getElementById('telaLogin').classList.add('hidden');
+      document.getElementById('painelApp').classList.remove('hidden');
+      document.body.classList.remove('flex', 'items-center', 'justify-center');
+      inicializarApp();
+    }
+
+    function bloquearApp() {
+      document.getElementById('painelApp').classList.add('hidden');
+      document.getElementById('telaLogin').classList.remove('hidden');
+      document.body.classList.add('flex', 'items-center', 'justify-center');
+    }
+
+    let clientesSalvos = JSON.parse(localStorage.getItem('db_clientes')) || [];
+    let servicosSalvos = JSON.parse(localStorage.getItem('db_servicos')) || [];
+    let empresa = JSON.parse(localStorage.getItem('db_empresa')) || { nome: '', cnpj: '', tel: '', pix: '', logo: '' };
+    let itensOrcamento = [];
+
+    function inicializarApp() {
+      carregarEmpresaInputs();
+      atualizarSelectsSalvos();
+      if (itensOrcamento.length === 0) adicionarLinhaVazia();
+      
+      ['empresaNome', 'empresaCnpj', 'empresaTel', 'empresaPix'].forEach(id => {
+        document.getElementById(id).addEventListener('input', salvarEmpresaLocal);
+      });
+      ['orcNomeCliente', 'orcWhatsCliente'].forEach(id => {
+        document.getElementById(id).addEventListener('input', atualizarPreview);
+      });
+
+      atualizarPreview();
+    }
+
+    function salvarEmpresaLocal() {
+      empresa.nome = document.getElementById('empresaNome').value;
+      empresa.cnpj = document.getElementById('empresaCnpj').value;
+      empresa.tel = document.getElementById('empresaTel').value;
+      empresa.pix = document.getElementById('empresaPix').value;
+      localStorage.setItem('db_empresa', JSON.stringify(empresa));
+      atualizarPreview();
+    }
+
+    function carregarEmpresaInputs() {
+      document.getElementById('empresaNome').value = empresa.nome || '';
+      document.getElementById('empresaCnpj').value = empresa.cnpj || '';
+      document.getElementById('empresaTel').value = empresa.tel || '';
+      document.getElementById('empresaPix').value = empresa.pix || '';
+      if (empresa.logo) {
+        document.getElementById('pvLogo').src = empresa.logo;
+        document.getElementById('pvLogo').classList.remove('hidden');
+      }
+    }
+
+    function carregarLogo(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          empresa.logo = e.target.result;
+          localStorage.setItem('db_empresa', JSON.stringify(empresa));
+          document.getElementById('pvLogo').src = empresa.logo;
+          document.getElementById('pvLogo').classList.remove('hidden');
+          atualizarPreview();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function salvarClienteAtual() {
+      const nome = document.getElementById('orcNomeCliente').value;
+      const whats = document.getElementById('orcWhatsCliente').value;
+      if (!nome) return alert('Digite o nome do cliente!');
+      if (!clientesSalvos.some(c => c.nome.toLowerCase() === nome.toLowerCase())) {
+        clientesSalvos.push({ id: Date.now(), nome, whats });
+        localStorage.setItem('db_clientes', JSON.stringify(clientesSalvos));
+        atualizarSelectsSalvos();
+        alert('Cliente salvo com sucesso!');
+      }
+    }
+
+    function puxarClienteSalvo() {
+      const id = document.getElementById('selectClienteSalvo').value;
+      const cliente = clientesSalvos.find(c => c.id == id);
+      if (cliente) {
+        document.getElementById('orcNomeCliente').value = cliente.nome;
+        document.getElementById('orcWhatsCliente').value = cliente.whats;
+        atualizarPreview();
+      }
+    }
+
+    function adicionarLinhaVazia() {
+      itensOrcamento.push({ descricao: '', qtd: 1, valor: 0 });
+      renderizarItens();
+    }
+
+    function salvarServicoBanco(idx) {
+      const item = itensOrcamento[idx];
+      if (!item.descricao) return alert('Preencha a descrição do serviço!');
+      if (!servicosSalvos.some(s => s.nome.toLowerCase() === item.descricao.toLowerCase())) {
+        servicosSalvos.push({ id: Date.now(), nome: item.descricao, valor: item.valor });
+        localStorage.setItem('db_servicos', JSON.stringify(servicosSalvos));
+        atualizarSelectsSalvos();
+        alert('Serviço salvo no catálogo!');
+      }
+    }
+
+    function puxarServicoSalvo(id) {
+      if (!id) return;
+      const servico = servicosSalvos.find(s => s.id == id);
+      if (servico) {
+        itensOrcamento.push({ descricao: servico.nome, qtd: 1, valor: servico.valor });
+        renderizarItens();
+        document.getElementById('selectServicoSalvo').value = "";
+      }
+    }
+
+    function renderizarItens() {
+      const container = document.getElementById('listaItens');
+      container.innerHTML = itensOrcamento.map((item, idx) => `
+        <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2 shadow-sm">
+          <input type="text" value="${item.descricao}" oninput="atualizarItem(${idx}, 'descricao', this.value)" placeholder="Nome do Serviço" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500">
+          <div class="flex gap-2 items-center">
+            <div class="flex-1">
+              <label class="text-[9px] text-slate-400 font-bold">Qtd</label>
+              <input type="number" value="${item.qtd}" oninput="atualizarItem(${idx}, 'qtd', this.value)" class="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-center font-bold text-white focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="flex-1">
+              <label class="text-[9px] text-slate-400 font-bold">Valor (R$)</label>
+              <input type="number" value="${item.valor}" oninput="atualizarItem(${idx}, 'valor', this.value)" class="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-right font-bold text-white focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="pt-3 flex gap-1">
+              <button onclick="salvarServicoBanco(${idx})" title="Salvar" class="bg-amber-500/10 text-amber-400 border border-amber-500/20 p-2.5 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition">💾</button>
+              <button onclick="removerItem(${idx})" title="Excluir" class="bg-red-500/10 text-red-400 border border-red-500/20 p-2.5 rounded-xl text-xs font-bold hover:bg-red-500/20 transition">✕</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      atualizarPreview();
+    }
+
+    function atualizarItem(idx, campo, valor) {
+      itensOrcamento[idx][campo] = campo === 'descricao' ? valor : parseFloat(valor) || 0;
+      atualizarPreview();
+    }
+
+    function removerItem(idx) {
+      itensOrcamento.splice(idx, 1);
+      if (itensOrcamento.length === 0) adicionarLinhaVazia();
+      renderizarItens();
+    }
+
+    function atualizarSelectsSalvos() {
+      document.getElementById('selectClienteSalvo').innerHTML = '<option value="">📁 Clientes Salvos...</option>' + 
+        clientesSalvos.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+
+      document.getElementById('selectServicoSalvo').innerHTML = '<option value="">📂 Catálogo de Serviços...</option>' + 
+        servicosSalvos.map(s => `<option value="${s.id}">${s.nome} (R$ ${s.valor.toFixed(2)})</option>`).join('');
+    }
+
+    function calcularTotal() {
+      return itensOrcamento.reduce((acc, i) => acc + (i.qtd * i.valor), 0);
+    }
+
+    function atualizarPreview() {
+      document.getElementById('pvEmpresaNome').innerText = empresa.nome || 'Sua Empresa';
+      
+      const elCnpj = document.getElementById('pvEmpresaCnpj');
+      if (empresa.cnpj && empresa.cnpj.trim() !== '') {
+        elCnpj.innerText = `CNPJ: ${empresa.cnpj}`;
+        elCnpj.classList.remove('hidden');
+      } else {
+        elCnpj.classList.add('hidden');
+      }
+
+      document.getElementById('pvEmpresaTel').innerText = empresa.tel ? `Contato: ${empresa.tel}` : 'Contato: --';
+      document.getElementById('pvEmpresaPix').innerText = empresa.pix || 'Não informada';
+
+      document.getElementById('pvClienteNome').innerText = document.getElementById('orcNomeCliente').value || '--';
+      document.getElementById('pvClienteWhats').innerText = document.getElementById('orcWhatsCliente').value || '--';
+
+      const total = calcularTotal();
+      document.getElementById('valorTotalExibicao').innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      document.getElementById('pvValorTotal').innerText = `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+      document.getElementById('pvTabelaItens').innerHTML = itensOrcamento.map(i => `
+        <tr class="border-b border-slate-100">
+          <td class="py-2 text-slate-800 font-medium">${i.descricao || 'Serviço'}</td>
+          <td class="py-2 text-center text-slate-600">${i.qtd}</td>
+          <td class="py-2 text-right text-slate-600">R$ ${(i.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td class="py-2 text-right font-bold text-slate-900">R$ ${(i.qtd * i.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+        </tr>
+      `).join('');
+    }
+
+    function gerarPDF() {
+      atualizarPreview();
+      const elemento = document.getElementById('folhaOrcamento');
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `Orcamento_${document.getElementById('orcNomeCliente').value || 'Cliente'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(elemento).save();
+    }
+
+    function enviarTextoWhatsApp() {
+      let whats = document.getElementById('orcWhatsCliente').value.replace(/\D/g, '');
+      if (whats.length === 10 || whats.length === 11) whats = '55' + whats;
+
+      let texto = `Olá *${document.getElementById('orcNomeCliente').value}*!\n\nSegue o orçamento enviado por *${empresa.nome || 'nossa empresa'}*:\n\n`;
+      itensOrcamento.forEach(i => {
+        if(i.descricao) texto += `• ${i.qtd}x ${i.descricao} - R$ ${(i.qtd * i.valor).toFixed(2)}\n`;
+      });
+      texto += `\n💰 *Total:* R$ ${calcularTotal().toFixed(2)}`;
+      if (empresa.pix) texto += `\n🔑 *Chave Pix:* ${empresa.pix}`;
+      texto += `\n\n_Obs: Documento comercial de orçamento. Não é nota fiscal._`;
+
+      window.open(`https://api.whatsapp.com/send?phone=${whats}&text=${encodeURIComponent(texto)}`, '_blank');
+    }
+
+    async function enviarPDFWhatsApp() {
+      atualizarPreview();
+      const elemento = document.getElementById('folhaOrcamento');
+      const nomeCliente = document.getElementById('orcNomeCliente').value || 'Cliente';
+      
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `Orcamento_${nomeCliente}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      try {
+        const pdfBlob = await html2pdf().set(opt).from(elemento).outputPdf('blob');
+        const file = new File([pdfBlob], `Orcamento_${nomeCliente}.pdf`, { type: "application/pdf" });
+
+        let itemCanShare = navigator.canShare && navigator.canShare({ files: [file] });
+        if (itemCanShare) {
+          await navigator.share({
+            files: [file],
+            title: 'Orçamento Profissional',
+            text: `Olá ${nomeCliente}, segue o seu orçamento em PDF.`
+          });
+        } else {
+          gerarPDF();
+          alert("O PDF foi baixado para o seu dispositivo.");
+        }
+      } catch (error) {
+        console.error("Erro ao gerar/compartilhar PDF:", error);
+        gerarPDF();
+      }
+    }
+  </script>
+</body>
+</html>
