@@ -345,6 +345,69 @@
 
   </div>
 
+  <!-- ELEMENTO OCULTO PARA GERAR O PDF DO RECIBO DE PAGAMENTO DOS ARQUIVADOS -->
+  <div id="folhaReciboArquivado" class="hidden bg-white text-slate-900 p-8 rounded-2xl shadow-xl space-y-6 text-xs font-sans">
+    <div class="flex justify-between items-start border-b border-slate-200 pb-5">
+      <div>
+        <h3 id="recEmpresaNome" class="font-extrabold text-base text-slate-900">Sua Empresa</h3>
+        <p id="recEmpresaCnpj" class="text-slate-500 text-[10px] hidden"></p>
+        <p id="recEmpresaTel" class="text-slate-500 text-[10px]">Contato: --</p>
+      </div>
+      <div class="text-right">
+        <span class="bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full text-[10px] tracking-wide">COMPROVANTE DE PAGAMENTO</span>
+      </div>
+    </div>
+
+    <div class="bg-slate-50 p-3.5 rounded-xl space-y-1 border border-slate-200">
+      <p class="text-slate-400 font-bold uppercase text-[9px] tracking-wider">CLIENTE</p>
+      <p id="recClienteNome" class="font-bold text-slate-900 text-sm">--</p>
+      <p id="recClienteWhats" class="text-slate-500 text-[10px]">--</p>
+    </div>
+
+    <!-- RESUMO DO PAGAMENTO -->
+    <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-2">
+      <p class="text-emerald-800 font-bold text-xs uppercase tracking-wider">✓ Status: Serviço Concluído e Pago</p>
+      <div class="grid grid-cols-2 gap-2 text-slate-700 text-[11px]">
+        <p><strong>Forma de Pagamento:</strong> <span id="recFormaPag">Pix</span></p>
+        <p><strong>Data do Pagamento:</strong> <span id="recDataPag">--</span></p>
+      </div>
+      <p id="recObsPagBox" class="text-slate-600 text-[10px] hidden"><strong>Obs do Pagamento:</strong> <span id="recObsPag">--</span></p>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="border-b border-slate-200 text-slate-400 text-[9px] font-bold tracking-wider">
+            <th class="py-2">SERVIÇO EXECUTADO</th>
+            <th class="py-2 text-center">QTD</th>
+            <th class="py-2 text-right">UNIT.</th>
+            <th class="py-2 text-right">TOTAL</th>
+          </tr>
+        </thead>
+        <tbody id="recTabelaItens"></tbody>
+      </table>
+    </div>
+
+    <div id="recSecaoGarantia" class="space-y-1.5 pt-2 border-t border-slate-200 hidden">
+      <p class="text-[10px] text-slate-700"><strong>Garantia (<span id="recDiasGarantia">90</span> dias):</strong> de <span id="recGarantiaInicio"></span> até <span id="recGarantiaFim"></span></p>
+    </div>
+
+    <div class="border-t border-slate-200 pt-4 flex justify-between items-center">
+      <div>
+        <p class="text-slate-400 text-[9px] font-bold uppercase tracking-wider">TOTAL QUITADO</p>
+      </div>
+      <div class="text-right">
+        <p id="recValorTotal" class="text-lg font-black text-emerald-600">R$ 0,00</p>
+      </div>
+    </div>
+
+    <div class="mt-8 pt-3 border-t border-dashed border-slate-200 text-center">
+      <p class="text-[8px] text-slate-400 font-medium">
+        * Comprovante de quitação de serviço comercial. **Não é Nota Fiscal**.
+      </p>
+    </div>
+  </div>
+
   <!-- FIREBASE SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -1170,39 +1233,79 @@
       const h = orcamentosArquivados.find(item => String(item.id) === String(id));
       if (!h) return;
 
-      // Salva os dados atuais do formulário para restaurar depois
-      const clienteAntigo = document.getElementById('orcNomeCliente').value;
-      const whatsAntigo = document.getElementById('orcWhatsCliente').value;
-      const obsAntigo = document.getElementById('orcObs').value;
-      const diasAntigo = document.getElementById('orcDiasGarantia').value;
-      const itensAntigos = JSON.parse(JSON.stringify(itensOrcamento));
+      document.getElementById('recEmpresaNome').innerText = empresa.nome || 'Sua Empresa';
+      const elCnpj = document.getElementById('recEmpresaCnpj');
+      if (empresa.cnpj && empresa.cnpj.trim() !== '') {
+        elCnpj.innerText = `CNPJ: ${empresa.cnpj}`;
+        elCnpj.classList.remove('hidden');
+      } else {
+        elCnpj.classList.add('hidden');
+      }
+      document.getElementById('recEmpresaTel').innerText = empresa.tel ? `Contato: ${empresa.tel}` : 'Contato: --';
+      
+      document.getElementById('recClienteNome').innerText = h.cliente || '--';
+      document.getElementById('recClienteWhats').innerText = h.whats || '--';
 
-      // Carrega temporariamente os dados do orçamento arquivado no painel e na preview
-      document.getElementById('orcNomeCliente').value = h.cliente || '';
-      document.getElementById('orcWhatsCliente').value = h.whats || '';
-      document.getElementById('orcObs').value = h.obs || '';
-      document.getElementById('orcDiasGarantia').value = h.diasGarantia || 90;
-      window.garantiaCalculada = { inicio: h.garantiaInicio || '', fim: h.garantiaFim || '', dias: h.diasGarantia || 90 };
-      itensOrcamento = JSON.parse(JSON.stringify(h.itens || []));
+      const pag = h.pagamento || {};
+      document.getElementById('recFormaPag').innerText = pag.forma || 'Pix';
+      document.getElementById('recDataPag').innerText = pag.data ? new Date(`${pag.data}T12:00:00`).toLocaleDateString('pt-BR') : '--';
 
-      atualizarPreview();
+      const obsBox = document.getElementById('recObsPagBox');
+      if (pag.observacao) {
+        document.getElementById('recObsPag').innerText = pag.observacao;
+        obsBox.classList.remove('hidden');
+      } else {
+        obsBox.classList.add('hidden');
+      }
+
+      document.getElementById('recTabelaItens').innerHTML = (h.itens || []).map(i => `
+        <tr class="border-b border-slate-100">
+          <td class="py-2 text-slate-800 font-medium">${i.descricao || 'Serviço'}</td>
+          <td class="py-2 text-center text-slate-600">${i.qtd}</td>
+          <td class="py-2 text-right text-slate-600">R$ ${(i.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td class="py-2 text-right font-bold text-slate-900">R$ ${(i.qtd * i.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+        </tr>
+      `).join('');
+
+      const secGarantia = document.getElementById('recSecaoGarantia');
+      if (h.garantiaInicio && h.garantiaFim) {
+        document.getElementById('recDiasGarantia').innerText = h.diasGarantia || 90;
+        document.getElementById('recGarantiaInicio').innerText = formatarDataBR(h.garantiaInicio);
+        document.getElementById('recGarantiaFim').innerText = formatarDataBR(h.garantiaFim);
+        secGarantia.classList.remove('hidden');
+      } else {
+        secGarantia.classList.add('hidden');
+      }
+
+      const totalVal = Number(h.total) || 0;
+      document.getElementById('recValorTotal').innerText = `R$ ${totalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+      const folhaRecibo = document.getElementById('folhaReciboArquivado');
+      folhaRecibo.classList.remove('hidden');
 
       try {
-        const resultado = await criarBlobPDFOrcamento();
-        await baixarBlobPDF(resultado.blob, `Orcamento_Concluido_${(h.cliente || 'Cliente').replace(/[\\/:*?"<>|]/g, '_')}.pdf`);
-      } catch (error) {
-        console.error('Erro ao gerar PDF do arquivado:', error);
-        alert('Não foi possível gerar o PDF do orçamento arquivado.');
+        const opcoes = {
+          margin: 8,
+          filename: `Comprovante_Pagamento_${(h.cliente || 'Cliente').trim().replace(/[\\/:*?"<>|]/g, '_')}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        const blob = await html2pdf().set(opcoes).from(folhaRecibo).outputPdf('blob');
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = opcoes.filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao gerar o PDF do comprovante.');
       } finally {
-        // Restaura os dados originais do prestador no painel
-        document.getElementById('orcNomeCliente').value = clienteAntigo;
-        document.getElementById('orcWhatsCliente').value = whatsAntigo;
-        document.getElementById('orcObs').value = obsAntigo;
-        document.getElementById('orcDiasGarantia').value = diasAntigo;
-        itensOrcamento = itensAntigos;
-        calcularDatasGarantia();
-        renderizarItens();
-        atualizarPreview();
+        folhaRecibo.classList.add('hidden');
       }
     }
 
