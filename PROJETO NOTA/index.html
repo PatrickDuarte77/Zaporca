@@ -98,16 +98,16 @@
     <!-- COLUNA ESQUERDA: FORMULÁRIO -->
     <div class="lg:col-span-7 bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-800 p-4 sm:p-6 space-y-6">
       
-      <!-- HEADER -->
-      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <!-- HEADER COM BOAS-VINDAS E IDENTIFICAÇÃO DO USUÁRIO -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-4 gap-3">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-xl flex items-center justify-center text-slate-950 font-black text-lg shadow-md shadow-amber-500/20">⚡</div>
           <div>
-            <h1 class="text-lg sm:text-xl font-black tracking-tight text-white">ZapOrça <span class="text-amber-400">Prático</span></h1>
-            <p id="infoUsuarioLogado" class="text-[10px] text-slate-400">Painel do Prestador</p>
+            <h1 class="text-sm sm:text-base font-black tracking-tight text-white" id="infoUsuarioLogado">Olá, --, bem-vindo</h1>
+            <p class="text-[10px] text-slate-400">ZapOrça Prático • Painel do Prestador</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <span id="badgePlano" class="text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">Grátis</span>
           <button onclick="abrirModalHistorico()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-2.5 py-1.5 rounded-xl transition border border-slate-700">
             📜 Histórico
@@ -328,7 +328,6 @@
     let dadosUsuarioDB = { status: 'gratis', bonusIniciais: 5, ultimoUsoData: '', usosHoje: 0 };
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Autenticação real exigida via Firebase em produção
       auth.onAuthStateChanged(async (user) => {
         if (user) {
           usuarioAtual = user;
@@ -362,6 +361,12 @@
     function atualizarInterfaceLimites() {
       const elBadge = document.getElementById('badgePlano');
       const elTexto = document.getElementById('textoUsosRestantes');
+      const elInfoUsuario = document.getElementById('infoUsuarioLogado');
+
+      // Atualiza o nome / e-mail de boas-vindas do usuário conectado
+      if (usuarioAtual && usuarioAtual.email) {
+        elInfoUsuario.innerText = `Olá, ${usuarioAtual.email}, bem-vindo`;
+      }
 
       if (dadosUsuarioDB.status === 'pro') {
         elBadge.innerText = "PRO VITALÍCIO";
@@ -370,10 +375,10 @@
       } else {
         elBadge.innerText = "GRÁTIS";
         if (dadosUsuarioDB.bonusIniciais > 0) {
-          elTexto.innerText = `🎁 Você tem ${dadosUsuarioDB.bonusIniciais} orçamentos bônus.`;
+          elTexto.innerText = `🎁 Você tem ${dadosUsuarioDB.bonusIniciais} orçamentos bônus disponíveis.`;
         } else {
           const restantesHoje = Math.max(0, 1 - dadosUsuarioDB.usosHoje);
-          elTexto.innerText = `⏳ Cota diária: ${restantesHoje} de 1 disponível hoje.`;
+          elTexto.innerText = `⏳ Cota diária: ${restantesHoje} de 1 orçamento disponível hoje.`;
         }
       }
     }
@@ -982,7 +987,7 @@
 
     async function gerarPDF() {
       try {
-        const resultado = await criarBlobPDFOrcamento();
+        const resultado = alt = await criarBlobPDFOrcamento();
         await baixarBlobPDF(resultado.blob, resultado.nomeArquivo);
       } catch (error) {
         console.error('Erro ao gerar PDF:', error);
