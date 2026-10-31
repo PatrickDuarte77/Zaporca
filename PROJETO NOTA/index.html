@@ -40,10 +40,6 @@
           Acessar / Criar Conta
         </button>
       </form>
-
-      <button onclick="entrarModoTesteLocal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl text-xs transition border border-amber-500/20">
-        ⚡ Testar Direto sem Login (Modo Local)
-      </button>
     </div>
   </div>
 
@@ -374,11 +370,6 @@
     let dadosUsuarioDB = { status: 'gratis', bonusIniciais: 5, ultimoUsoData: '', usosHoje: 0 };
 
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.location.protocol === 'file:') {
-        entrarModoTesteLocal();
-        return;
-      }
-
       auth.onAuthStateChanged(async (user) => {
         if (user) {
           usuarioAtual = user;
@@ -416,15 +407,7 @@
       if (btn) btn.classList.add('hidden');
     });
 
-    function entrarModoTesteLocal() {
-      usuarioAtual = { email: 'teste.local@zaporca.com', uid: 'local_123' };
-      dadosUsuarioDB = { status: 'pro', bonusIniciais: 99, ultimoUsoData: '', usosHoje: 0 };
-      document.getElementById('infoUsuarioLogado').innerText = 'Modo de Teste Local (Offline)';
-      liberarApp();
-    }
-
     async function carregarDadosUsuario(user) {
-      if (window.location.protocol === 'file:') return;
       const refDoc = db.collection('usuarios').doc(user.uid);
       const doc = await refDoc.get();
       const hojeDataStr = new Date().toISOString().split('T')[0];
@@ -448,7 +431,7 @@
       const elTexto = document.getElementById('textoUsosRestantes');
       const elInfoUsuario = document.getElementById('infoUsuarioLogado');
 
-      if (usuarioAtual && usuarioAtual.email && window.location.protocol !== 'file:') {
+      if (usuarioAtual && usuarioAtual.email) {
         elInfoUsuario.innerText = `Olá, ${usuarioAtual.email}, bem-vindo`;
       }
 
@@ -578,7 +561,7 @@
           return;
         }
 
-        if (usuarioAtual && window.location.protocol !== 'file:') {
+        if (usuarioAtual) {
           await db.collection('usuarios').doc(usuarioAtual.uid).update({
             bonusIniciais: dadosUsuarioDB.bonusIniciais,
             usosHoje: dadosUsuarioDB.usosHoje
@@ -604,25 +587,6 @@
           Gerando Pix...
         </div>
       `;
-
-      if (window.location.protocol === 'file:') {
-        setTimeout(() => {
-          containerPix.innerHTML = `
-            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">MODO TESTE LOCAL (Simulado)</p>
-            <p class="text-2xl font-black text-emerald-400">R$ 35,00</p>
-            <div class="bg-white p-3 rounded-xl w-36 h-36 mx-auto flex items-center justify-center border border-slate-200">
-              <span class="text-[10px] text-slate-900 font-bold text-center">QR CODE DE TESTE</span>
-            </div>
-            <div class="space-y-2">
-              <input type="text" id="inputCopiaCola" readonly value="00020126580014br.gov.bcb.pix...TESTE" class="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl text-[10px] text-slate-300 text-center">
-              <button onclick="copiarPixCopiaCola()" class="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold py-2 rounded-xl text-xs transition">
-                📋 Copiar Código Pix Teste
-              </button>
-            </div>
-          `;
-        }, 600);
-        return;
-      }
 
       try {
         const emailUser = usuarioAtual ? usuarioAtual.email : 'cliente@zaporca.com';
@@ -651,7 +615,7 @@
         }
       } catch (err) {
         console.error(err);
-        containerPix.innerHTML = `<p class="text-xs text-red-400 p-4">Modo de teste offline.</p>`;
+        containerPix.innerHTML = `<p class="text-xs text-red-400 p-4">Erro de conexão ao gerar Pix.</p>`;
       }
     }
 
@@ -669,7 +633,6 @@
     }
 
     function fazerLoginGoogle() {
-      if (window.location.protocol === 'file:') { entrarModoTesteLocal(); return; }
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => auth.signInWithPopup(provider))
@@ -678,7 +641,6 @@
 
     function fazerLoginEmail(e) {
       e.preventDefault();
-      if (window.location.protocol === 'file:') { entrarModoTesteLocal(); return; }
       const email = document.getElementById('loginEmail').value;
       const senha = document.getElementById('loginSenha').value;
       auth.signInWithEmailAndPassword(email, senha).catch((err) => {
@@ -691,7 +653,6 @@
     }
 
     function fazerLogout() {
-      if (window.location.protocol === 'file:') { bloquearApp(); return; }
       auth.signOut();
     }
 
@@ -1195,6 +1156,7 @@
           <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2">
             <p class="text-[10px] text-slate-300">💳 ${pagamento.forma || 'Pagamento registrado'}${pagamento.observacao ? ' • '+pagamento.observacao : ''}</p>
             <div class="flex gap-2 flex-wrap">
+              <button onclick="baixarPDFArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-amber-300 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20">📥 Baixar PDF</button>
               <button onclick="enviarComprovanteArquivadoWhats('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20">💬 Enviar comprovante</button>
               ${comprovante ? `<button onclick="abrirComprovanteArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-sky-300 border border-sky-500/20 hover:bg-sky-500/10">📎 Ver arquivo</button>` : ''}
               <button onclick="excluirArquivado('${h.id}')" class="text-[10px] font-bold px-3 py-2 rounded-lg text-red-400 border border-red-500/20 hover:bg-red-500/10">🗑 Excluir</button>
@@ -1202,6 +1164,46 @@
           </div>
         </div>`;
       }).join('');
+    }
+
+    async function baixarPDFArquivado(id) {
+      const h = orcamentosArquivados.find(item => String(item.id) === String(id));
+      if (!h) return;
+
+      // Salva os dados atuais do formulário para restaurar depois
+      const clienteAntigo = document.getElementById('orcNomeCliente').value;
+      const whatsAntigo = document.getElementById('orcWhatsCliente').value;
+      const obsAntigo = document.getElementById('orcObs').value;
+      const diasAntigo = document.getElementById('orcDiasGarantia').value;
+      const itensAntigos = JSON.parse(JSON.stringify(itensOrcamento));
+
+      // Carrega temporariamente os dados do orçamento arquivado no painel e na preview
+      document.getElementById('orcNomeCliente').value = h.cliente || '';
+      document.getElementById('orcWhatsCliente').value = h.whats || '';
+      document.getElementById('orcObs').value = h.obs || '';
+      document.getElementById('orcDiasGarantia').value = h.diasGarantia || 90;
+      window.garantiaCalculada = { inicio: h.garantiaInicio || '', fim: h.garantiaFim || '', dias: h.diasGarantia || 90 };
+      itensOrcamento = JSON.parse(JSON.stringify(h.itens || []));
+
+      atualizarPreview();
+
+      try {
+        const resultado = await criarBlobPDFOrcamento();
+        await baixarBlobPDF(resultado.blob, `Orcamento_Concluido_${(h.cliente || 'Cliente').replace(/[\\/:*?"<>|]/g, '_')}.pdf`);
+      } catch (error) {
+        console.error('Erro ao gerar PDF do arquivado:', error);
+        alert('Não foi possível gerar o PDF do orçamento arquivado.');
+      } finally {
+        // Restaura os dados originais do prestador no painel
+        document.getElementById('orcNomeCliente').value = clienteAntigo;
+        document.getElementById('orcWhatsCliente').value = whatsAntigo;
+        document.getElementById('orcObs').value = obsAntigo;
+        document.getElementById('orcDiasGarantia').value = diasAntigo;
+        itensOrcamento = itensAntigos;
+        calcularDatasGarantia();
+        renderizarItens();
+        atualizarPreview();
+      }
     }
 
     function enviarComprovanteArquivadoWhats(id) {
